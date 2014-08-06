@@ -7,7 +7,7 @@ namespace IglooCastle.CLI
 	public class Documentation
 	{
 		private string[] _namespaces = new string[0];
-		private string[] _types = new string[0];
+		private TypeElement[] _types = new TypeElement[0];
 
 		public string[] Namespaces
 		{
@@ -15,10 +15,10 @@ namespace IglooCastle.CLI
 			set { _namespaces = value ?? new string[0]; }
 		}
 
-		public string[] Types
+		public TypeElement[] Types
 		{
 			get { return _types; }
-			set { _types = value ?? new string[0]; }
+			set { _types = value ?? new TypeElement[0]; }
 		}
 
 		public Documentation Merge(Documentation that)

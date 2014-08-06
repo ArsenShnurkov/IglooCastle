@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using IronPython.Hosting;
+using System.Xml;
 
 namespace IglooCastle.CLI
 {
@@ -30,15 +31,25 @@ namespace IglooCastle.CLI
 		{
 			Console.WriteLine("Processing assembly {0}", file);
 			string fullPath = Path.GetFullPath(file);
+
+			XmlDocument xmlDoc = FindMatchingDocumentation(fullPath);
+			
 			Assembly assembly = Assembly.LoadFile(fullPath);
 			Documentation documentation = new Documentation();
 			HashSet<string> namespaces = new HashSet<string>();
-			List<string> types = new List<string>();
-			foreach (Type type in assembly.GetTypes())
+			List<TypeElement> types = new List<TypeElement>();
+			foreach (Type type in assembly.GetTypes().Where(t => t.IsVisible))
 			{
 				namespaces.Add(type.Namespace ?? string.Empty);
-				types.Add(type.FullName);
+				types.Add(new TypeElement
+					{
+						Type = type,
+						XmlComment = GetTypeDocumentation(type, xmlDoc),
+						Properties = type.GetProperties().Select(p => new PropertyElement { Property = p, XmlComment = GetPropertyDocumentation(p, xmlDoc) }).ToArray(),
+						Methods = type.GetMethods().Where(m => !m.IsSpecialName).Select(m => new MethodElement { Method = m }).ToArray()
+					});
 				Console.WriteLine("Processing type {0}", type);
+				
 				foreach (MemberInfo member in type.GetMembers(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
 				{
 					Console.WriteLine("Processing member {0}", member);
@@ -49,6 +60,47 @@ namespace IglooCastle.CLI
 			documentation.Namespaces = namespaces.ToArray();
 			documentation.Types = types.ToArray();
 			return documentation;
+		}
+
+		private XmlComment GetXmlComment(XmlDocument doc, string selector)
+		{
+			if (doc == null)
+			{
+				return null;
+			}
+
+			XmlNode node = doc.SelectSingleNode(selector);
+			if (node == null)
+			{
+				return null;
+			}
+
+			return new XmlComment((XmlElement)node);
+		}
+
+		private XmlComment GetTypeDocumentation(Type t, XmlDocument doc)
+		{
+			return GetXmlComment(doc, "//member[@name=\"T:" + t.FullName + "\"]");
+		}
+
+		private XmlComment GetPropertyDocumentation(PropertyInfo pi, XmlDocument doc)
+		{
+			return GetXmlComment(
+				doc,
+				"//member[@name=\"P:" + pi.ReflectedType.FullName + "." + pi.Name + "\"]");
+		}
+
+		private XmlDocument FindMatchingDocumentation(string file)
+		{
+			string xmlFile = Path.GetFileNameWithoutExtension(file) + ".xml";
+			if (!File.Exists(xmlFile))
+			{
+				return null;
+			}
+
+			XmlDocument doc = new XmlDocument();
+			doc.Load(xmlFile);
+			return doc;
 		}
 
 		protected bool Test { get; set; }
