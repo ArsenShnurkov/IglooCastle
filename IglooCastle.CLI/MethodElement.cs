@@ -2,8 +2,12 @@
 
 namespace IglooCastle.CLI
 {
-	public class MethodElement : DocumentationElement
+	public class MethodElement : DocumentationElement<MethodInfo>
 	{
-		public MethodInfo Method { get; set; }
+		public MethodInfo Method
+		{
+			get { return Member; }
+			set { Member = value; }
+		}
 	}
 }

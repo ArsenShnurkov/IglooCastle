@@ -71,10 +71,12 @@
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
     <Compile Include="MethodElement.cs" />
+    <Compile Include="MissingXmlComment.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyElement.cs" />
     <Compile Include="TypeElement.cs" />
+    <Compile Include="XmlComment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

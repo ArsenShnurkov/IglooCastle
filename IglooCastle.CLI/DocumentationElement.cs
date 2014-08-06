@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Xml;
+using System.Linq;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
 	/// <summary>
 	/// This is the root of all documentation elements.
 	/// </summary>
-	public class DocumentationElement
+	public abstract class DocumentationElement<T> where T: MemberInfo
 	{
 		private XmlComment _xmlComment;
 
@@ -22,47 +23,17 @@ namespace IglooCastle.CLI
 			get { return _xmlComment ?? new MissingXmlComment(); }
 			set { _xmlComment = value; }
 		}
-	}
 
-	public class XmlComment
-	{
-		private readonly XmlElement _documentationNode;
+		public T Member { get; set; }
 
-		public XmlComment(XmlElement documentationNode)
+		public bool HasAttribute(string attributeName)
 		{
-			_documentationNode = documentationNode;
+			return Member.GetCustomAttributes().Any(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
 		}
 
-		public virtual string Section(string name)
+		public Attribute GetAttribute(string attributeName)
 		{
-			return _documentationNode.SelectSingleNode(name).InnerXml;
-		}
-
-		public string Summary
-		{
-			get { return Section("summary"); }
-		}
-
-		public virtual string InnertText
-		{
-			get { return _documentationNode.InnerText; }
-		}
-	}
-
-	public class MissingXmlComment : XmlComment
-	{
-		public MissingXmlComment() : base(null)
-		{
-		}
-
-		public override string Section(string name)
-		{
-			return string.Empty;
-		}
-
-		public override string InnertText
-		{
-			get { return string.Empty; }
+			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
 		}
 	}
 }

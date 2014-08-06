@@ -2,8 +2,12 @@
 
 namespace IglooCastle.CLI
 {
-	public class PropertyElement : DocumentationElement
+	public class PropertyElement : DocumentationElement<PropertyInfo>
 	{
-		public PropertyInfo Property { get; set; }
+		public PropertyInfo Property
+		{
+			get { return Member; }
+			set { Member = value; }
+		}
 	}
 }

@@ -2,12 +2,16 @@
 
 namespace IglooCastle.CLI
 {
-	public class TypeElement : DocumentationElement
+	public class TypeElement : DocumentationElement<Type>
 	{
 		private PropertyElement[] _properties = new PropertyElement[0];
 		private MethodElement[] _methods = new MethodElement[0];
 
-		public Type Type { get; set; }
+		public Type Type
+		{
+			get { return Member; }
+			set { Member = value; }
+		}
 
 		public PropertyElement[] Properties
 		{
