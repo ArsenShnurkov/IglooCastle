@@ -3,16 +3,15 @@ using System.Linq;
 
 namespace IglooCastle.CLI
 {
-	[Serializable]
 	public class Documentation
 	{
-		private string[] _namespaces = new string[0];
+		private NamespaceElement[] _namespaces = new NamespaceElement[0];
 		private TypeElement[] _types = new TypeElement[0];
 
-		public string[] Namespaces
+		public NamespaceElement[] Namespaces
 		{
 			get { return _namespaces; }
-			set { _namespaces = value ?? new string[0]; }
+			set { _namespaces = value ?? new NamespaceElement[0]; }
 		}
 
 		public TypeElement[] Types
@@ -28,6 +27,26 @@ namespace IglooCastle.CLI
 					Namespaces = Namespaces.Union(that.Namespaces).ToArray(),
 					Types = Types.Union(that.Types).ToArray()
 				};
+		}
+
+		public bool IsLocalType(Type type)
+		{
+			return Types.Any(t => t.Type == Normalize(type));
+		}
+
+		public Type Normalize(Type type)
+		{
+			if (type.ContainsGenericParameters || type.IsGenericType)
+			{
+				return type.GetGenericTypeDefinition();
+			}
+
+			return type;
+		}
+
+		public string TypeFullName(Type type)
+		{
+			return Normalize(type).FullName;
 		}
 	}
 }

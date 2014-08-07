@@ -7,6 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 using IronPython.Hosting;
 using System.Xml;
+using IronPython.Runtime;
+using IronPython.Runtime.Exceptions;
+using IronPython.Runtime.Operations;
+using Microsoft.Scripting.Hosting;
+using Microsoft.Scripting.Hosting.Providers;
 
 namespace IglooCastle.CLI
 {
@@ -23,6 +28,17 @@ namespace IglooCastle.CLI
 			Program p = new Program();
 			p.AddAssemblyResolver();
 			Documentation documentation = new Documentation();
+
+#if DEBUG
+			if (args.Length == 0)
+			{
+				args = new string[]
+					{
+						Assembly.GetExecutingAssembly().Location
+					};
+			}
+#endif
+
 			documentation = args.Aggregate(documentation, (current, arg) => current.Merge(p.ProcessAssembly(arg)));
 			p.RunGenerator(documentation);
 		}
@@ -76,16 +92,9 @@ namespace IglooCastle.CLI
 							Methods = type.GetMethods().Where(m => !m.IsSpecialName).Select(m => new MethodElement {Method = m}).ToArray()
 						});
 					Console.WriteLine("Processing type {0}", type);
-
-					foreach (MemberInfo member in type.GetMembers(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-						)
-					{
-						Console.WriteLine("Processing member {0}", member);
-						Console.WriteLine("Declaring type: {0}", member.DeclaringType);
-					}
 				}
 
-				documentation.Namespaces = namespaces.ToArray();
+				documentation.Namespaces = namespaces.Select(n => new NamespaceElement { Namespace = n }).ToArray();
 				documentation.Types = types.ToArray();
 				return documentation;
 			}
@@ -120,6 +129,7 @@ namespace IglooCastle.CLI
 
 		private XmlComment GetTypeDocumentation(Type t, XmlDocument doc)
 		{
+			//t.IsGenericTypeDefinition
 			return GetXmlComment(doc, "//member[@name=\"T:" + t.FullName + "\"]");
 		}
 

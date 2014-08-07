@@ -2,7 +2,7 @@
 
 namespace IglooCastle.CLI
 {
-	public class MethodElement : DocumentationElement<MethodInfo>
+	public class MethodElement : ReflectedElement<MethodInfo>
 	{
 		public MethodInfo Method
 		{

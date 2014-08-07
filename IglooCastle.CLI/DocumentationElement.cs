@@ -1,13 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-
-namespace IglooCastle.CLI
+﻿namespace IglooCastle.CLI
 {
 	/// <summary>
 	/// This is the root of all documentation elements.
 	/// </summary>
-	public abstract class DocumentationElement<T> where T: MemberInfo
+	public abstract class DocumentationElement<T>
 	{
 		private XmlComment _xmlComment;
 
@@ -25,15 +21,5 @@ namespace IglooCastle.CLI
 		}
 
 		public T Member { get; set; }
-
-		public bool HasAttribute(string attributeName)
-		{
-			return Member.GetCustomAttributes().Any(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
-		}
-
-		public Attribute GetAttribute(string attributeName)
-		{
-			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
-		}
 	}
 }

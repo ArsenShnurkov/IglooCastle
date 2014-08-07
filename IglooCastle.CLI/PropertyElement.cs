@@ -2,7 +2,7 @@
 
 namespace IglooCastle.CLI
 {
-	public class PropertyElement : DocumentationElement<PropertyInfo>
+	public class PropertyElement : ReflectedElement<PropertyInfo>
 	{
 		public PropertyInfo Property
 		{
