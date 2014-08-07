@@ -40,7 +40,7 @@ namespace IglooCastle.CLI
 			return Types.Any(t => t.Type == normalizedType);
 		}
 
-		public Type Normalize(Type type)
+		private Type Normalize(Type type)
 		{
 			if (type.ContainsGenericParameters && type.IsGenericType)
 			{
@@ -48,17 +48,6 @@ namespace IglooCastle.CLI
 			}
 
 			return type;
-		}
-
-		public string TypeFullName(Type type)
-		{
-			Type normalizedType = Normalize(type);
-			if (normalizedType.IsGenericParameter)
-			{
-				return normalizedType.Name;
-			}
-
-			return normalizedType.FullName;
 		}
 	}
 }

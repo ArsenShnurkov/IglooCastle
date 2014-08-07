@@ -3,15 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using IronPython.Hosting;
 using System.Xml;
-using IronPython.Runtime;
-using IronPython.Runtime.Exceptions;
-using IronPython.Runtime.Operations;
-using Microsoft.Scripting.Hosting;
-using Microsoft.Scripting.Hosting.Providers;
 
 namespace IglooCastle.CLI
 {
@@ -129,7 +122,6 @@ namespace IglooCastle.CLI
 
 		private XmlComment GetTypeDocumentation(Type t, XmlDocument doc)
 		{
-			//t.IsGenericTypeDefinition
 			return GetXmlComment(doc, "//member[@name=\"T:" + t.FullName + "\"]");
 		}
 

@@ -11,7 +11,12 @@ class FilenameProvider:
 		self.documentation = documentation
 
 	def type(self, dotnetType):
-		return "T_" + self.documentation.TypeFullName(dotnetType) + ".html"
+		if dotnetType.IsGenericType and not dotnetType.IsGenericTypeDefinition:
+			t = dotnetType.GetGenericTypeDefinition()
+		else:
+			t = dotnetType
+
+		return "T_" + t.FullName + ".html"
 
 	def namespace(self, str):
 		return "N_" + str + ".html"
@@ -61,6 +66,49 @@ class HtmlTemplate:
 			return ""
 
 
+class TypeHelper:
+	def __init__(self, documentation, dotnetType):
+		self.documentation = documentation
+		self.dotnetType = dotnetType
+
+	def _sysname(self, t):
+		builtins = { "System.Boolean" : "bool", "System.Object" : "object", "System.Int32" : "int", "System.String" : "string" }
+		if t.FullName in builtins:
+			return builtins[t.FullName]
+		else:
+			return None
+
+	def name(self):
+		if self.dotnetType.IsGenericParameter:
+			# e.g. T when found inside SomeType<T>
+			return self.dotnetType.Name
+
+		if self.dotnetType.ContainsGenericParameters and self.dotnetType.IsGenericType:
+			t = System.Type.GetGenericTypeDefinition(self.dotnetType)
+		else:
+			t = self.dotnetType
+
+		if t.IsGenericType:
+			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
+		else:
+			return self._sysname(t) or t.FullName
+
+	def prefix(self):
+		prefix = ""
+		if self.dotnetType.IsEnum:
+			prefix = "Enum"
+		elif self.dotnetType.IsValueType:
+			prefix = "Struct"
+		elif self.dotnetType.IsInterface:
+			prefix = "Interface"
+		elif self.dotnetType.IsClass:
+			prefix = "Class"
+		else:
+			# what else?
+			prefix = "Type"
+
+		return prefix
+
 class HtmlGenerator:
 	def __init__(self, documentation):
 		self.documentation = documentation
@@ -80,26 +128,14 @@ class HtmlGenerator:
 		for namespaceElement in self.documentation.Namespaces:
 			namespace = namespaceElement.Namespace
 			print namespace
-
 			self.htmlTemplate.title = namespace
 			self.htmlTemplate.writeTo(self.filenameProvider.namespace(namespace))
 
 	def generateTypePage(self, typeElement):
-		fullName = self.documentation.TypeFullName(typeElement.Type)
 		dotnetType = typeElement.Type
-
-		prefix = ""
-		if dotnetType.IsEnum:
-			prefix = "Enum"
-		elif dotnetType.IsValueType:
-			prefix = "Struct"
-		elif dotnetType.IsInterface:
-			prefix = "Interface"
-		elif dotnetType.IsClass:
-			prefix = "Class"
-		else:
-			# what else?
-			prefix = "Type"
+		typeHelper = TypeHelper(self.documentation, dotnetType)
+		fullName = typeHelper.name()
+		prefix = typeHelper.prefix()
 
 		self.htmlTemplate.title = "%s %s" % (prefix, fullName)
 		self.htmlTemplate.main  = HtmlTemplate.fmtOptional("""
@@ -126,7 +162,13 @@ class HtmlGenerator:
 	#
 
 	def typeLink(self, t):
-		typeFullName = self.documentation.TypeFullName(t)
+		if t.IsArray:
+			return self.typeLink(t.GetElementType()) + "[]"
+
+		if t.IsGenericType and not t.IsGenericTypeDefinition:
+			return self.typeLink(t.GetGenericTypeDefinition())
+
+		typeFullName = TypeHelper(self.documentation, t).name()
 		print "Type %s, full name %s" % (t, typeFullName)
 
 		if self.documentation.IsLocalType(t):
@@ -141,17 +183,19 @@ class HtmlGenerator:
 	# core
 	#
 
+	def formatParameter(self, parameterInfo):
+		return self.typeLink(parameterInfo.ParameterType) + " " + parameterInfo.Name
+
 	def memberListItem(self, typeElement, memberElement):
 		if memberElement.Member.DeclaringType != typeElement.Type:
 			inheritedLink = "(inherited from %s)" % self.typeLink(memberElement.Member.DeclaringType)
 		else:
 			inheritedLink = ""
 
-
 		if isinstance(memberElement.Member, System.Reflection.PropertyInfo):
 			name = memberElement.Member.Name + " : " + self.typeLink(memberElement.Property.PropertyType)
 		else:
-			name = memberElement.Member.Name
+			name = self.typeLink(memberElement.Method.ReturnType) + " " + memberElement.Member.Name + "(" + ",".join(self.formatParameter(p) for p in memberElement.Method.GetParameters()) + ")"
 
 		result = """<li>
 			<dl>
