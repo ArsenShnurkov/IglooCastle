@@ -31,12 +31,18 @@ namespace IglooCastle.CLI
 
 		public bool IsLocalType(Type type)
 		{
-			return Types.Any(t => t.Type == Normalize(type));
+			Type normalizedType = Normalize(type);
+			if (normalizedType.IsGenericParameter)
+			{
+				return false;
+			}
+
+			return Types.Any(t => t.Type == normalizedType);
 		}
 
 		public Type Normalize(Type type)
 		{
-			if (type.ContainsGenericParameters || type.IsGenericType)
+			if (type.ContainsGenericParameters && type.IsGenericType)
 			{
 				return type.GetGenericTypeDefinition();
 			}
@@ -46,7 +52,13 @@ namespace IglooCastle.CLI
 
 		public string TypeFullName(Type type)
 		{
-			return Normalize(type).FullName;
+			Type normalizedType = Normalize(type);
+			if (normalizedType.IsGenericParameter)
+			{
+				return normalizedType.Name;
+			}
+
+			return normalizedType.FullName;
 		}
 	}
 }

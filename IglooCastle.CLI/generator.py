@@ -1,4 +1,5 @@
 ﻿import sys
+import System
 from time import gmtime, strftime
 
 #
@@ -45,12 +46,19 @@ class HtmlTemplate:
 					</footer>
 				</body>
 			</html>
-	""" % (self.title, self.h1, self.header, self.main, self.footer)
+	""" % (self.title, self.h1 or self.title, self.header, self.main, self.footer)
 
 	def writeTo(self, file):
 		f = open(file, 'w')
 		f.write(self.write())
 		f.close()
+
+	@staticmethod
+	def fmtOptional(template, contents):
+		if len(contents):
+			return template % contents
+		else:
+			return ""
 
 
 class HtmlGenerator:
@@ -74,20 +82,35 @@ class HtmlGenerator:
 			print namespace
 
 			self.htmlTemplate.title = namespace
-			self.htmlTemplate.h1 = namespace
 			self.htmlTemplate.writeTo(self.filenameProvider.namespace(namespace))
+
+	def generateTypePage(self, typeElement):
+		fullName = self.documentation.TypeFullName(typeElement.Type)
+		dotnetType = typeElement.Type
+
+		prefix = ""
+		if dotnetType.IsEnum:
+			prefix = "Enum"
+		elif dotnetType.IsValueType:
+			prefix = "Struct"
+		elif dotnetType.IsInterface:
+			prefix = "Interface"
+		elif dotnetType.IsClass:
+			prefix = "Class"
+		else:
+			# what else?
+			prefix = "Type"
+
+		self.htmlTemplate.title = "%s %s" % (prefix, fullName)
+		self.htmlTemplate.main  = HtmlTemplate.fmtOptional("""
+				<h2>Summary</h2>
+				<p>%s</p>""", typeElement.XmlComment.Summary) + self.typeProperties(typeElement) + self.typeMethods(typeElement)
+		self.htmlTemplate.writeTo(self.filenameProvider.type(typeElement.Type))
 
 	def generateTypePages(self):
 		print "Types:"
 		for typeElement in self.documentation.Types:
-			fullName = self.documentation.TypeFullName(typeElement.Type)
-			print fullName
-			self.htmlTemplate.title = "Type " + fullName
-			self.htmlTemplate.h1    = "Type " + fullName
-			self.htmlTemplate.main  = """
-					<p>""" + typeElement.XmlComment.Summary + """</p>
-					""" + self.typeProperties(typeElement) + self.typeMethods(typeElement)
-			self.htmlTemplate.writeTo(self.filenameProvider.type(typeElement.Type))
+			self.generateTypePage(typeElement)
 
 	def generateNantTaskPages(self):
 		print "NAnt tasks:"
@@ -124,26 +147,25 @@ class HtmlGenerator:
 		else:
 			inheritedLink = ""
 
+
+		if isinstance(memberElement.Member, System.Reflection.PropertyInfo):
+			name = memberElement.Member.Name + " : " + self.typeLink(memberElement.Property.PropertyType)
+		else:
+			name = memberElement.Member.Name
+
 		result = """<li>
 			<dl>
 				<dt>%s</dt>
 				<dd>%s %s</dd>
 			</dl>
-		</li>""" % (memberElement.Member.Name, memberElement.XmlComment.Summary, inheritedLink)
+		</li>""" % (name, memberElement.XmlComment.Summary, inheritedLink)
 
 		return result
 
 	def typeProperties(self, typeElement):
-		print 'typeProperties'
-		if not len(typeElement.Properties):
-			return ""
-
-		result = ''.join(self.memberListItem(typeElement, p) for p in typeElement.Properties)
-		if len(result):
-			result = "<h2>Properties</h2><ul>" + result + "</ul>"
-
-		return result
-
+		return HtmlTemplate.fmtOptional(
+			"<h2>Properties</h2><ul>%s</ul>",
+			''.join(self.memberListItem(typeElement, p) for p in typeElement.Properties))
 
 	def typeMethods(self, typeElement):
 		print 'typeMethods'
