@@ -5,21 +5,28 @@
 	/// </summary>
 	public abstract class DocumentationElement<T>
 	{
-		private IXmlComment _xmlComment;
+		private readonly Documentation _documentation;
+		
+		protected DocumentationElement(Documentation documentation, T member)
+		{
+			_documentation = documentation;
+			Member = member;
+		}
 
 		/// <summary>
-		/// Gets or sets the XML comment that documents this code element.
+		/// Gets the XML comment that documents this code element.
 		/// </summary>
 		/// <remarks>
 		/// This value will never be <c>null</c>.
 		/// </remarks>
 		/// <value>The XML comment.</value>
-		public IXmlComment XmlComment
-		{
-			get { return _xmlComment ?? new MissingXmlComment(); }
-			set { _xmlComment = value; }
-		}
+		public abstract IXmlComment XmlComment { get; }
 
-		public T Member { get; set; }
+		public T Member { get; private set; }
+
+		public Documentation Documentation
+		{
+			get { return _documentation; }
+		}
 	}
 }

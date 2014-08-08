@@ -218,6 +218,7 @@ class HtmlGenerator:
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", type_element.XmlComment.Summary()) + \
+			self.base_type_section(type_element) + \
 			self.constructors_section(type_element, type_helper) + \
 			self.properties_section(type_element) + self.methods_section(type_element)
 		html_template.footer = self.__footer()
@@ -237,12 +238,6 @@ class HtmlGenerator:
 			if type_element.HasAttribute('NAnt.Core.Attributes.TaskName'):
 				taskName = type_element.GetAttribute('NAnt.Core.Attributes.TaskName').Name
 				print "todo: generate page for nant task " + taskName
-
-
-
-	#
-	# linking
-	#
 
 	def type_link(self, dotnet_type):
 		if dotnet_type.IsArray:
@@ -286,8 +281,8 @@ class HtmlGenerator:
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
 
 	def inherited_from(self, type_element, memberElement):
-		if memberElement.Member.DeclaringType != type_element.Type:
-			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.Member.DeclaringType)
+		if memberElement.DeclaringType != type_element.Type:
+			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.DeclaringType)
 		else:
 			inheritedLink = ""
 		return inheritedLink
@@ -300,12 +295,18 @@ class HtmlGenerator:
 			"<h2>Constructors</h2><ul>%s</ul>",
 			"".join(constructor_list_item(c) for c in type_element.Constructors))
 
+	def base_type_section(self, type):
+		base_type = type.BaseType
+		if not base_type or base_type.FullName == "System.Object":
+			return ""
+		return "<p>Inherits from %s</p>" % self.type_link(base_type)
+
 	def properties_section(self, type_element):
 		def property_list_item(property_element):
-			name        = property_element.Property.Name
-			ptype       = self.type_link(property_element.Property.PropertyType)
+			name        = property_element.Name
+			ptype       = self.type_link(property_element.PropertyType)
 			description = property_element.XmlComment.Summary() + " " + self.inherited_from(type_element, property_element)
-			link        = self.filenameProvider.property(type_element.Type, property_element.Property)
+			link        = self.filenameProvider.property(type_element.Type, property_element)
 			return """<tr>
 			<td><a href=\"%s\">%s</a></td>
 			<td>%s</td>
@@ -342,12 +343,12 @@ class HtmlGenerator:
 			if is_extension_method:
 				parameters_string = "this " + parameters_string
 
-			name = self.type_link(memberElement.Method.ReturnType) + " " + \
-				memberElement.Member.Name + "(" + \
+			name = self.type_link(memberElement.ReturnType) + " " + \
+				memberElement.Name + "(" + \
 				parameters_string + \
 				")"
 
-			name = self.format_attributes(memberElement.Member.GetCustomAttributes(False)) + name
+			name = self.format_attributes(memberElement.GetCustomAttributes(False)) + name
 			result = """<li>
 				<dl>
 					<dt>%s</dt>
@@ -369,6 +370,18 @@ class HtmlGenerator:
 				typeHelper = self.__type_helper(t.Type)
 				result = result + "<li>"
 				result = result + ( "<a href=\"%s\">%s</a>" % (typeHelper.link(), typeHelper.short_name() + " " + typeHelper.type_kind()) )
+				result = result + "<ol>"
+				if len(t.Properties):
+					result = result + "<li>Properties"
+					result = result + "<ol>"
+					for p in t.Properties:
+						result = result + "<li>"
+						result = result + ( "<a href=\"%s\">%s</a>" % (self.filenameProvider.property(t.Type, p), p.Property.Name) )
+						result = result + "</li>"
+					result = result + "</ol>"
+					result = result + "</li>"
+				result = result + "</ol>"
+
 				result = result + "</li>"
 
 			result = result + "</ol>"

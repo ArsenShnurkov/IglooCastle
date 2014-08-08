@@ -72,6 +72,7 @@
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
     <Compile Include="IXmlComment.cs" />
+    <Compile Include="MethodBaseElement.cs" />
     <Compile Include="MethodElement.cs" />
     <Compile Include="MissingXmlComment.cs" />
     <Compile Include="NamespaceElement.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="PropertyElement.cs" />
     <Compile Include="ReflectedElement.cs" />
     <Compile Include="TypeElement.cs" />
+    <Compile Include="TypeMemberElement.cs" />
     <Compile Include="XmlComment.cs" />
     <Compile Include="XmlCommentExtensions.cs" />
   </ItemGroup>

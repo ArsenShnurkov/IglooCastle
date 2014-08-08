@@ -1,9 +1,9 @@
-﻿using System;
+﻿using IronPython.Hosting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using IronPython.Hosting;
 using System.Xml;
 
 namespace IglooCastle.CLI
@@ -65,30 +65,25 @@ namespace IglooCastle.CLI
 			try
 			{
 				string fullPath = Path.GetFullPath(file);
-				XmlDocument xmlDoc = FindMatchingDocumentation(fullPath);
 				_possibleAssemblyPaths.Add(Path.GetDirectoryName(fullPath));
 				Assembly assembly = Assembly.LoadFrom(fullPath);
-				Documentation documentation = new Documentation();
+				Documentation documentation = new Documentation
+					{
+						DocumentationSources = new[]
+							{
+								FindMatchingDocumentation(fullPath)
+							}
+					};
+
 				HashSet<string> namespaces = new HashSet<string>();
 				List<TypeElement> types = new List<TypeElement>();
 				foreach (Type type in assembly.GetTypes().Where(t => t.IsVisible))
 				{
 					namespaces.Add(type.Namespace ?? string.Empty);
-					types.Add(new TypeElement
-						{
-							Type = type,
-							XmlComment = GetTypeDocumentation(type, xmlDoc),
-							Constructors = GetConstructors(type, xmlDoc),
-							Properties =
-								type.GetProperties()
-								    .Select(p => new PropertyElement {Property = p, XmlComment = GetPropertyDocumentation(p, xmlDoc)})
-								    .ToArray(),
-							Methods = type.GetMethods().Where(m => !m.IsSpecialName).Select(m => new MethodElement {Method = m}).ToArray()
-						});
-					Console.WriteLine("Processing type {0}", type);
+					types.Add(new TypeElement(documentation, type));
 				}
 
-				documentation.Namespaces = namespaces.Select(n => new NamespaceElement(documentation) { Namespace = n }).ToArray();
+				documentation.Namespaces = namespaces.Select(n => new NamespaceElement(documentation, n)).ToArray();
 				documentation.Types = types.ToArray();
 				return documentation;
 			}
@@ -97,62 +92,11 @@ namespace IglooCastle.CLI
 				Console.WriteLine("Could not load assembly {0}", file);
 				foreach (Exception loaderEx in ex.LoaderExceptions)
 				{
-
 					Console.WriteLine(loaderEx);
 				}
 
 				throw;
 			}
-		}
-
-		private ConstructorElement[] GetConstructors(Type type, XmlDocument xmlDoc)
-		{
-			return type.GetConstructors().Select(c => new ConstructorElement
-				{
-					Constructor = c,
-					XmlComment = GetConstructorDocumentation(type, c, xmlDoc)
-				}).ToArray();
-		}
-
-		private XmlComment GetConstructorDocumentation(Type type, ConstructorInfo constructorInfo, XmlDocument xmlDoc)
-		{
-			// M:IglooCastle.CLI.NamespaceElement.#ctor(IglooCastle.CLI.Documentation)
-			return GetMethodDocumentation(type, "#ctor", constructorInfo.GetParameters(), xmlDoc);
-		}
-
-		private XmlComment GetMethodDocumentation(Type type, string methodName, ParameterInfo[] parameters, XmlDocument xmlDoc)
-		{
-			string paramString = string.Join(",", parameters.Select(p => p.ParameterType.FullName));
-			string attributeValue = type.FullName + "." + methodName + "(" + paramString + ")";
-			return GetXmlComment(xmlDoc, "//member[@name=\"M:" + attributeValue + "\"]");
-		}
-
-		private XmlComment GetXmlComment(XmlDocument doc, string selector)
-		{
-			if (doc == null)
-			{
-				return null;
-			}
-
-			XmlNode node = doc.SelectSingleNode(selector);
-			if (node == null)
-			{
-				return null;
-			}
-
-			return new XmlComment((XmlElement)node);
-		}
-
-		private XmlComment GetTypeDocumentation(Type t, XmlDocument doc)
-		{
-			return GetXmlComment(doc, "//member[@name=\"T:" + t.FullName + "\"]");
-		}
-
-		private XmlComment GetPropertyDocumentation(PropertyInfo pi, XmlDocument doc)
-		{
-			return GetXmlComment(
-				doc,
-				"//member[@name=\"P:" + pi.ReflectedType.FullName + "." + pi.Name + "\"]");
 		}
 
 		private XmlDocument FindMatchingDocumentation(string file)

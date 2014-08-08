@@ -9,18 +9,25 @@ namespace IglooCastle.CLI
 		/// Creates an instance of this class.
 		/// </summary>
 		/// <param name="documentation">The owner documentation instance.</param>
-		public NamespaceElement(Documentation documentation)
+		/// <param name="name">The name of the namespace.</param>
+		public NamespaceElement(Documentation documentation, string name)
+			: base(documentation, name)
 		{
-			Documentation = documentation;
 		}
 
 		public string Namespace
 		{
 			get { return Member; }
-			set { Member = value; }
 		}
 
-		private Documentation Documentation { get; set; }
+		public override IXmlComment XmlComment
+		{
+			get
+			{
+				// TODO: figure out where to read namespace comments from
+				return new MissingXmlComment();
+			}
+		}
 
 		/// <summary>
 		/// Gets the types of the documentation that belong to this namespace.

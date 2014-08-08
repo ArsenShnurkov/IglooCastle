@@ -6,32 +6,52 @@ namespace IglooCastle.CLI
 {
 	public class TypeElement : ReflectedElement<Type>
 	{
-		private ConstructorElement[] _constructors = new ConstructorElement[0];
-		private PropertyElement[] _properties = new PropertyElement[0];
-		private MethodElement[] _methods = new MethodElement[0];
+		public TypeElement(Documentation owner, Type type)
+			: base(owner, type)
+		{
+		}
+
+		public Type BaseType
+		{
+			get { return Member.BaseType; }
+		}
 
 		public Type Type
 		{
 			get { return Member; }
-			set { Member = value; }
 		}
 
-		public ConstructorElement[] Constructors
+		public ICollection<ConstructorElement> Constructors
 		{
-			get { return _constructors; }
-			set { _constructors = value ?? new ConstructorElement[0]; }
+			get
+			{
+				return Type.GetConstructors()
+						   .Select(c => new ConstructorElement(Documentation, this, c))
+						   .ToList();
+			}
 		}
 
-		public IEnumerable<PropertyElement> Properties
+		public ICollection<PropertyElement> Properties
 		{
-			get { return _properties.OrderBy(p => p.Property.Name); }
-			set { _properties = (value ?? Enumerable.Empty<PropertyElement>()).ToArray(); }
+			get
+			{
+				return Type.GetProperties()
+					.OrderBy(p => p.Name)
+					.Select(p => new PropertyElement(Documentation, this, p))
+					.ToList();
+			}
 		}
 
-		public MethodElement[] Methods
+		public ICollection<MethodElement> Methods
 		{
-			get { return _methods; }
-			set { _methods = value ?? new MethodElement[0]; }
+			get
+			{
+				return Type.GetMethods()
+						   .Where(m => !m.IsSpecialName)
+						   .OrderBy(m => m.Name)
+						   .Select(m => new MethodElement(Documentation, this, m))
+						   .ToList();
+			}
 		}
 	}
 }

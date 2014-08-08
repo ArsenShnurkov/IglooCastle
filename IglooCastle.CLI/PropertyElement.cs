@@ -1,13 +1,23 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
-	public class PropertyElement : ReflectedElement<PropertyInfo>
+	public class PropertyElement : TypeMemberElement<PropertyInfo>
 	{
+		public PropertyElement(Documentation documentation, TypeElement ownerType, PropertyInfo property)
+			: base(documentation, ownerType, property)
+		{
+		}
+
 		public PropertyInfo Property
 		{
 			get { return Member; }
-			set { Member = value; }
+		}
+
+		public Type PropertyType
+		{
+			get { return Member.PropertyType; }
 		}
 	}
 }
