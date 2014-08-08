@@ -68,8 +68,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConstructorElement.cs" />
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
+    <Compile Include="IXmlComment.cs" />
     <Compile Include="MethodElement.cs" />
     <Compile Include="MissingXmlComment.cs" />
     <Compile Include="NamespaceElement.cs" />
@@ -79,6 +81,7 @@
     <Compile Include="ReflectedElement.cs" />
     <Compile Include="TypeElement.cs" />
     <Compile Include="XmlComment.cs" />
+    <Compile Include="XmlCommentExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

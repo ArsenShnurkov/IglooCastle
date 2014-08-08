@@ -2,7 +2,7 @@
 
 namespace IglooCastle.CLI
 {
-	public class XmlComment
+	public sealed class XmlComment : IXmlComment
 	{
 		private readonly XmlElement _documentationNode;
 
@@ -11,17 +11,12 @@ namespace IglooCastle.CLI
 			_documentationNode = documentationNode;
 		}
 
-		public virtual string Section(string name)
+		public string Section(string name)
 		{
 			return _documentationNode.SelectSingleNode(name).InnerXml;
 		}
 
-		public string Summary
-		{
-			get { return Section("summary"); }
-		}
-
-		public virtual string InnertText
+		public string InnertText
 		{
 			get { return _documentationNode.InnerText; }
 		}

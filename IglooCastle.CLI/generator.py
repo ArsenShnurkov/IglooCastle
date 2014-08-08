@@ -1,6 +1,13 @@
 ﻿import sys
+import clr
 import System
 from time import gmtime, strftime
+
+clr.AddReference("IglooCastle.CLI")
+import IglooCastle.CLI
+clr.ImportExtensions(IglooCastle.CLI)
+
+
 
 #
 # generated filenames
@@ -178,7 +185,10 @@ class HtmlGenerator:
 		self.htmlTemplate.title = "%s %s" % (fullName, type_kind)
 		self.htmlTemplate.main  = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", typeElement.XmlComment.Summary) + self.type_properties(typeElement) + self.type_methods(typeElement)
+				<p>%s</p>""", typeElement.XmlComment.Summary()) + \
+			self.constructors_section(typeElement) + \
+			self.type_properties(typeElement) + self.type_methods(typeElement)
+
 		self.htmlTemplate.write_to(self.filenameProvider.type(typeElement.Type))
 
 	def generate_type_pages(self):
@@ -213,12 +223,21 @@ class HtmlGenerator:
 		else:
 			return typeHelper.name()
 
-	#
-	# core
-	#
+	def format_attribute(self, attribute):
+		return "[" + self.type_link(attribute.GetType()) + "]"
+
+	def format_attributes(self, attributes):
+		if not attributes:
+			return ""
+
+		return "".join(self.format_attribute(a) for a in attributes)
 
 	def format_parameter(self, parameterInfo):
-		return self.type_link(parameterInfo.ParameterType) + " " + parameterInfo.Name
+		attributes = parameterInfo.GetCustomAttributes(False)
+
+		return self.format_attributes(attributes) + \
+			self.type_link(parameterInfo.ParameterType) + \
+			" " + parameterInfo.Name
 
 	def member_list_item(self, typeElement, memberElement):
 		if memberElement.Member.DeclaringType != typeElement.Type:
@@ -228,17 +247,26 @@ class HtmlGenerator:
 
 		if isinstance(memberElement.Member, System.Reflection.PropertyInfo):
 			name = memberElement.Member.Name + " : " + self.type_link(memberElement.Property.PropertyType)
+		elif isinstance(memberElement.Member, System.Reflection.ConstructorInfo):
+			name = memberElement.Member.Name + " " + "(" + ",".join(self.format_parameter(p) for p in memberElement.Constructor.GetParameters()) + ")"
 		else:
 			name = self.type_link(memberElement.Method.ReturnType) + " " + memberElement.Member.Name + "(" + ",".join(self.format_parameter(p) for p in memberElement.Method.GetParameters()) + ")"
 
+		name = self.format_attributes(memberElement.Member.GetCustomAttributes(False)) + name
 		result = """<li>
 			<dl>
 				<dt>%s</dt>
 				<dd>%s %s</dd>
 			</dl>
-		</li>""" % (name, memberElement.XmlComment.Summary, inheritedLink)
+		</li>""" % (name, memberElement.XmlComment.Summary(), inheritedLink)
 
 		return result
+
+	def constructors_section(self, type_element):
+		return HtmlTemplate.fmt_non_empty(
+			"<h2>Constructors</h2><ul>%s</ul>",
+			"".join(self.member_list_item(type_element, c) for c in type_element.Constructors))
+
 
 	def type_properties(self, typeElement):
 		return HtmlTemplate.fmt_non_empty(

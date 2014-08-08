@@ -4,6 +4,7 @@ namespace IglooCastle.CLI
 {
 	public class TypeElement : ReflectedElement<Type>
 	{
+		private ConstructorElement[] _constructors = new ConstructorElement[0];
 		private PropertyElement[] _properties = new PropertyElement[0];
 		private MethodElement[] _methods = new MethodElement[0];
 
@@ -11,6 +12,12 @@ namespace IglooCastle.CLI
 		{
 			get { return Member; }
 			set { Member = value; }
+		}
+
+		public ConstructorElement[] Constructors
+		{
+			get { return _constructors; }
+			set { _constructors = value ?? new ConstructorElement[0]; }
 		}
 
 		public PropertyElement[] Properties

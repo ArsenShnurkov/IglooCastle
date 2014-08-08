@@ -5,7 +5,7 @@
 	/// </summary>
 	public abstract class DocumentationElement<T>
 	{
-		private XmlComment _xmlComment;
+		private IXmlComment _xmlComment;
 
 		/// <summary>
 		/// Gets or sets the XML comment that documents this code element.
@@ -14,7 +14,7 @@
 		/// This value will never be <c>null</c>.
 		/// </remarks>
 		/// <value>The XML comment.</value>
-		public XmlComment XmlComment
+		public IXmlComment XmlComment
 		{
 			get { return _xmlComment ?? new MissingXmlComment(); }
 			set { _xmlComment = value; }

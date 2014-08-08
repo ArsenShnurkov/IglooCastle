@@ -78,6 +78,7 @@ namespace IglooCastle.CLI
 						{
 							Type = type,
 							XmlComment = GetTypeDocumentation(type, xmlDoc),
+							Constructors = GetConstructors(type, xmlDoc),
 							Properties =
 								type.GetProperties()
 								    .Select(p => new PropertyElement {Property = p, XmlComment = GetPropertyDocumentation(p, xmlDoc)})
@@ -102,6 +103,28 @@ namespace IglooCastle.CLI
 
 				throw;
 			}
+		}
+
+		private ConstructorElement[] GetConstructors(Type type, XmlDocument xmlDoc)
+		{
+			return type.GetConstructors().Select(c => new ConstructorElement
+				{
+					Constructor = c,
+					XmlComment = GetConstructorDocumentation(type, c, xmlDoc)
+				}).ToArray();
+		}
+
+		private XmlComment GetConstructorDocumentation(Type type, ConstructorInfo constructorInfo, XmlDocument xmlDoc)
+		{
+			// M:IglooCastle.CLI.NamespaceElement.#ctor(IglooCastle.CLI.Documentation)
+			return GetMethodDocumentation(type, "#ctor", constructorInfo.GetParameters(), xmlDoc);
+		}
+
+		private XmlComment GetMethodDocumentation(Type type, string methodName, ParameterInfo[] parameters, XmlDocument xmlDoc)
+		{
+			string paramString = string.Join(",", parameters.Select(p => p.ParameterType.FullName));
+			string attributeValue = type.FullName + "." + methodName + "(" + paramString + ")";
+			return GetXmlComment(xmlDoc, "//member[@name=\"M:" + attributeValue + "\"]");
 		}
 
 		private XmlComment GetXmlComment(XmlDocument doc, string selector)

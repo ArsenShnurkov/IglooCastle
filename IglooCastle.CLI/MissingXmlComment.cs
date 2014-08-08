@@ -1,17 +1,13 @@
 ﻿namespace IglooCastle.CLI
 {
-	public class MissingXmlComment : XmlComment
+	public sealed class MissingXmlComment : IXmlComment
 	{
-		public MissingXmlComment() : base(null)
-		{
-		}
-
-		public override string Section(string name)
+		public string Section(string name)
 		{
 			return string.Empty;
 		}
 
-		public override string InnertText
+		public string InnertText
 		{
 			get { return string.Empty; }
 		}
