@@ -15,6 +15,12 @@ def flatten(something):
 		else:
 			yield x
 
+
+# Some naming conventions:
+# 'type_element' is a TypeElement instance
+# 'dotnet_type'  is a .NET Type instance
+# 'type'         is either a 'type_element' or a 'dotnet_type'
+
 #
 # generated filenames
 #
@@ -100,10 +106,7 @@ class TypeHelper:
 			# e.g. T when found inside SomeType<T>
 			return self.dotnet_type.Name
 
-		if self.dotnet_type.ContainsGenericParameters and self.dotnet_type.IsGenericType:
-			t = System.Type.GetGenericTypeDefinition(self.dotnet_type)
-		else:
-			t = self.dotnet_type
+		t = self.documentation.Normalize(self.dotnet_type)
 
 		if t.IsGenericType:
 			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
@@ -115,10 +118,7 @@ class TypeHelper:
 			# e.g. T when found inside SomeType<T>
 			return self.dotnet_type.Name
 
-		if self.dotnet_type.ContainsGenericParameters and self.dotnet_type.IsGenericType:
-			t = System.Type.GetGenericTypeDefinition(self.dotnet_type)
-		else:
-			t = self.dotnet_type
+		t = self.documentation.Normalize(self.dotnet_type)
 
 		if t.IsGenericType:
 			return t.Name.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
@@ -219,6 +219,8 @@ class HtmlGenerator:
 				<h2>Summary</h2>
 				<p>%s</p>""", type_element.XmlComment.Summary()) + \
 			self.base_type_section(type_element) + \
+			self.interfaces_section(type_element) + \
+			self.derived_types_section(type_element) + \
 			self.constructors_section(type_element, type_helper) + \
 			self.properties_section(type_element) + self.methods_section(type_element)
 		html_template.footer = self.__footer()
@@ -240,6 +242,8 @@ class HtmlGenerator:
 				print "todo: generate page for nant task " + taskName
 
 	def type_link(self, dotnet_type):
+		print "type_link %s" % dotnet_type.Name
+
 		if dotnet_type.IsArray:
 			return self.type_link(dotnet_type.GetElementType()) + "[]"
 
@@ -249,9 +253,14 @@ class HtmlGenerator:
 		typeHelper = self.__type_helper(dotnet_type)
 		link = typeHelper.link()
 		if link:
-			return "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
+			print "test"
+			result = "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
+			print "test 2"
 		else:
-			return typeHelper.name()
+			result = typeHelper.name()
+
+		print "type_link is %s" % result
+		return result
 
 	def exclude_attribute(self, attribute):
 		if (attribute.GetType().Name == "__DynamicallyInvokableAttribute"):
@@ -288,6 +297,8 @@ class HtmlGenerator:
 		return inheritedLink
 
 	def constructors_section(self, type_element, type_helper):
+		print "constructors_section"
+
 		def constructor_list_item(constructor_element):
 			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor_element.Constructor) )
 
@@ -300,6 +311,24 @@ class HtmlGenerator:
 		if not base_type or base_type.FullName == "System.Object":
 			return ""
 		return "<p>Inherits from %s</p>" % self.type_link(base_type)
+
+	def interfaces_section(self, type):
+		interfaces = type.GetInterfaces()
+		if not interfaces:
+			return ""
+
+		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_link(t) for t in interfaces)
+
+	def derived_types_section(self, type_element):
+		print "derived_types_section"
+
+		derived_types = type_element.GetDerivedTypes()
+		if not derived_types:
+			return ""
+
+		print "derived_types_section"
+
+		return "<p>Known derived types: %s</p>" % ", ".join(self.type_link(t) for t in derived_types)
 
 	def properties_section(self, type_element):
 		def property_list_item(property_element):

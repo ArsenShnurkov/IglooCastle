@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -39,6 +41,11 @@ namespace IglooCastle.CLI
 				};
 		}
 
+		public bool IsLocalType(TypeElement type)
+		{
+			return true;
+		}
+
 		public bool IsLocalType(Type type)
 		{
 			Type normalizedType = Normalize(type);
@@ -50,7 +57,12 @@ namespace IglooCastle.CLI
 			return Types.Any(t => t.Type == normalizedType);
 		}
 
-		private Type Normalize(Type type)
+		public TypeElement Normalize(TypeElement type)
+		{
+			return type;
+		}
+
+		public Type Normalize(Type type)
 		{
 			if (type.ContainsGenericParameters && type.IsGenericType)
 			{

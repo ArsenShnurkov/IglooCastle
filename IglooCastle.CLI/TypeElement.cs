@@ -53,5 +53,50 @@ namespace IglooCastle.CLI
 						   .ToList();
 			}
 		}
+
+		public bool IsArray
+		{
+			get { return Type.IsArray; }
+		}
+
+		public bool IsGenericType
+		{
+			get { return Type.IsGenericType; }
+		}
+
+		public bool IsGenericParameter
+		{
+			get { return Type.IsGenericParameter; }
+		}
+
+		public bool ContainsGenericParameters
+		{
+			get { return Type.ContainsGenericParameters; }
+		}
+
+		public bool IsGenericTypeDefinition
+		{
+			get { return Type.IsGenericTypeDefinition; }
+		}
+
+		public string FullName
+		{
+			get { return Type.FullName; }
+		}
+
+		public Type[] GetInterfaces()
+		{
+			return Member.GetInterfaces();
+		}
+
+		public ICollection<TypeElement> GetDerivedTypes()
+		{
+			return Documentation.Types.Where(t => t.Type != this.Type && Type.IsAssignableFrom(t.Type) ).ToList();
+		}
+
+		public Type[] GetGenericArguments()
+		{
+			return Member.GetGenericArguments();
+		}
 	}
 }
