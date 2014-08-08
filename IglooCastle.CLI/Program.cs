@@ -87,7 +87,7 @@ namespace IglooCastle.CLI
 					Console.WriteLine("Processing type {0}", type);
 				}
 
-				documentation.Namespaces = namespaces.Select(n => new NamespaceElement { Namespace = n }).ToArray();
+				documentation.Namespaces = namespaces.Select(n => new NamespaceElement(documentation) { Namespace = n }).ToArray();
 				documentation.Types = types.ToArray();
 				return documentation;
 			}

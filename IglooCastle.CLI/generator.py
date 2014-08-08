@@ -53,13 +53,14 @@ class HtmlTemplate:
 			</html>
 	""" % (self.title, self.h1 or self.title, self.header, self.main, self.footer)
 
-	def writeTo(self, file):
+	def write_to(self, file):
 		f = open(file, 'w')
 		f.write(self.write())
 		f.close()
 
 	@staticmethod
-	def fmtOptional(template, contents):
+	def fmt_non_empty(template, contents):
+		"""Formats the contents into template, if the contents are not empty."""
 		if len(contents):
 			return template % contents
 		else:
@@ -67,16 +68,10 @@ class HtmlTemplate:
 
 
 class TypeHelper:
-	def __init__(self, documentation, dotnetType):
-		self.documentation = documentation
-		self.dotnetType = dotnetType
-
-	def _sysname(self, t):
-		builtins = { "System.Boolean" : "bool", "System.Object" : "object", "System.Int32" : "int", "System.String" : "string" }
-		if t.FullName in builtins:
-			return builtins[t.FullName]
-		else:
-			return None
+	def __init__(self, documentation, filenameProvider, dotnetType):
+		self.documentation    = documentation
+		self.filenameProvider = filenameProvider
+		self.dotnetType       = dotnetType
 
 	def name(self):
 		if self.dotnetType.IsGenericParameter:
@@ -91,23 +86,66 @@ class TypeHelper:
 		if t.IsGenericType:
 			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
 		else:
-			return self._sysname(t) or t.FullName
+			return self.__sysname(t) or t.FullName
 
-	def prefix(self):
-		prefix = ""
+	def short_name(self):
+		if self.dotnetType.IsGenericParameter:
+			# e.g. T when found inside SomeType<T>
+			return self.dotnetType.Name
+
+		if self.dotnetType.ContainsGenericParameters and self.dotnetType.IsGenericType:
+			t = System.Type.GetGenericTypeDefinition(self.dotnetType)
+		else:
+			t = self.dotnetType
+
+		if t.IsGenericType:
+			return t.Name.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
+		else:
+			return self.__sysname(t) or t.Name
+
+	def type_kind(self):
+		type_kind = ""
 		if self.dotnetType.IsEnum:
-			prefix = "Enum"
+			type_kind = "Enumeration"
 		elif self.dotnetType.IsValueType:
-			prefix = "Struct"
+			type_kind = "Struct"
 		elif self.dotnetType.IsInterface:
-			prefix = "Interface"
+			type_kind = "Interface"
 		elif self.dotnetType.IsClass:
-			prefix = "Class"
+			type_kind = "Class"
 		else:
 			# what else?
-			prefix = "Type"
+			type_kind = "Type"
 
-		return prefix
+		return type_kind
+
+	def link(self):
+		t = self.dotnetType
+		if t.IsArray:
+			raise ValueError("Can not link to an array")
+
+		if t.IsGenericType and not t.IsGenericTypeDefinition:
+			raise ValueError("Can not link to closed generic types")
+
+		if self.documentation.IsLocalType(t):
+			link = self.filenameProvider.type(t)
+			return link
+		else:
+			return None
+
+	def __sysname(self, t):
+		"""Return the alias of a system type, e.g. object instead of System.Object"""
+		builtins = {
+			"System.Boolean" : "bool",
+			"System.Object"  : "object",
+			"System.Int32"   : "int",
+			"System.String"  : "string"
+		}
+
+		if t.FullName in builtins:
+			return builtins[t.FullName]
+		else:
+			return None
 
 class HtmlGenerator:
 	def __init__(self, documentation):
@@ -120,35 +158,35 @@ class HtmlGenerator:
 			<link type=\"text/css\" rel=\"stylesheet\" href=\"style.css\" />
 			</footer>"""
 
-	def generateIndexPage(self):
+	def generate_index_page(self):
 		pass
 
-	def generateNamespacePages(self):
+	def generate_namespace_pages(self):
 		print "Namespaces:"
 		for namespaceElement in self.documentation.Namespaces:
 			namespace = namespaceElement.Namespace
 			print namespace
 			self.htmlTemplate.title = namespace
-			self.htmlTemplate.writeTo(self.filenameProvider.namespace(namespace))
+			self.htmlTemplate.write_to(self.filenameProvider.namespace(namespace))
 
-	def generateTypePage(self, typeElement):
+	def generate_type_page(self, typeElement):
 		dotnetType = typeElement.Type
-		typeHelper = TypeHelper(self.documentation, dotnetType)
+		typeHelper = self.__type_helper(dotnetType)
 		fullName = typeHelper.name()
-		prefix = typeHelper.prefix()
+		type_kind = typeHelper.type_kind()
 
-		self.htmlTemplate.title = "%s %s" % (prefix, fullName)
-		self.htmlTemplate.main  = HtmlTemplate.fmtOptional("""
+		self.htmlTemplate.title = "%s %s" % (fullName, type_kind)
+		self.htmlTemplate.main  = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", typeElement.XmlComment.Summary) + self.typeProperties(typeElement) + self.typeMethods(typeElement)
-		self.htmlTemplate.writeTo(self.filenameProvider.type(typeElement.Type))
+				<p>%s</p>""", typeElement.XmlComment.Summary) + self.type_properties(typeElement) + self.type_methods(typeElement)
+		self.htmlTemplate.write_to(self.filenameProvider.type(typeElement.Type))
 
-	def generateTypePages(self):
+	def generate_type_pages(self):
 		print "Types:"
 		for typeElement in self.documentation.Types:
-			self.generateTypePage(typeElement)
+			self.generate_type_page(typeElement)
 
-	def generateNantTaskPages(self):
+	def generate_nant_task_pages(self):
 		print "NAnt tasks:"
 		for typeElement in self.documentation.Types:
 			if typeElement.HasAttribute('NAnt.Core.Attributes.TaskName'):
@@ -161,41 +199,37 @@ class HtmlGenerator:
 	# linking
 	#
 
-	def typeLink(self, t):
+	def type_link(self, t):
 		if t.IsArray:
-			return self.typeLink(t.GetElementType()) + "[]"
+			return self.type_link(t.GetElementType()) + "[]"
 
 		if t.IsGenericType and not t.IsGenericTypeDefinition:
-			return self.typeLink(t.GetGenericTypeDefinition())
+			return self.type_link(t.GetGenericTypeDefinition())
 
-		typeFullName = TypeHelper(self.documentation, t).name()
-		print "Type %s, full name %s" % (t, typeFullName)
-
-		if self.documentation.IsLocalType(t):
-			link = self.filenameProvider.type(t)
-			print link
-			return "<a href=\"" + link + "\">" + typeFullName + "</a>"
+		typeHelper = self.__type_helper(t)
+		link = typeHelper.link()
+		if link:
+			return "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
 		else:
-			print typeFullName
-			return typeFullName
+			return typeHelper.name()
 
 	#
 	# core
 	#
 
-	def formatParameter(self, parameterInfo):
-		return self.typeLink(parameterInfo.ParameterType) + " " + parameterInfo.Name
+	def format_parameter(self, parameterInfo):
+		return self.type_link(parameterInfo.ParameterType) + " " + parameterInfo.Name
 
-	def memberListItem(self, typeElement, memberElement):
+	def member_list_item(self, typeElement, memberElement):
 		if memberElement.Member.DeclaringType != typeElement.Type:
-			inheritedLink = "(inherited from %s)" % self.typeLink(memberElement.Member.DeclaringType)
+			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.Member.DeclaringType)
 		else:
 			inheritedLink = ""
 
 		if isinstance(memberElement.Member, System.Reflection.PropertyInfo):
-			name = memberElement.Member.Name + " : " + self.typeLink(memberElement.Property.PropertyType)
+			name = memberElement.Member.Name + " : " + self.type_link(memberElement.Property.PropertyType)
 		else:
-			name = self.typeLink(memberElement.Method.ReturnType) + " " + memberElement.Member.Name + "(" + ",".join(self.formatParameter(p) for p in memberElement.Method.GetParameters()) + ")"
+			name = self.type_link(memberElement.Method.ReturnType) + " " + memberElement.Member.Name + "(" + ",".join(self.format_parameter(p) for p in memberElement.Method.GetParameters()) + ")"
 
 		result = """<li>
 			<dl>
@@ -206,35 +240,46 @@ class HtmlGenerator:
 
 		return result
 
-	def typeProperties(self, typeElement):
-		return HtmlTemplate.fmtOptional(
+	def type_properties(self, typeElement):
+		return HtmlTemplate.fmt_non_empty(
 			"<h2>Properties</h2><ul>%s</ul>",
-			''.join(self.memberListItem(typeElement, p) for p in typeElement.Properties))
+			''.join(self.member_list_item(typeElement, p) for p in typeElement.Properties))
 
-	def typeMethods(self, typeElement):
-		print 'typeMethods'
+	def type_methods(self, typeElement):
 		result = ""
 		for p in typeElement.Methods:
-			result = result + self.memberListItem(typeElement, p)
+			result = result + self.member_list_item(typeElement, p)
 		if len(result):
 			result = "<h2>Methods</h2><ul>" + result + "</ul>"
 
 		return result
 
 	def nav(self):
-		result = ""
-		for t in self.documentation.Types:
-			result = result + "<li>" + self.typeLink(t.Type) + "</li>"
-		if len(result):
-			result = "<nav><ul>" + result + "</ul></nav>"
+		result = "<ol>"
+		for n in self.documentation.Namespaces:
+			result = result + "<li>" + n.Namespace + " Namespace</li>"
+			result = result + "<ol>"
+			for t in n.Types:
+				typeHelper = self.__type_helper(t.Type)
+				result = result + "<li>"
+				result = result + ( "<a href=\"%s\">%s</a>" % (typeHelper.link(), typeHelper.short_name() + " " + typeHelper.type_kind()) )
+				result = result + "</li>"
+
+			result = result + "</ol>"
+		result = result + "</ol>"
 
 		return result
 
+	def __type_helper(self, dotNetType):
+		return TypeHelper(self.documentation, self.filenameProvider, dotNetType)
+
+
 
 def Generate(documentation):
+	"""Entry point for IglooCastle"""
 	print "Hello from python!"
 	htmlGenerator = HtmlGenerator(documentation)
-	htmlGenerator.generateIndexPage()
-	htmlGenerator.generateNamespacePages()
-	htmlGenerator.generateTypePages()
-	htmlGenerator.generateNantTaskPages()
+	htmlGenerator.generate_index_page()
+	htmlGenerator.generate_namespace_pages()
+	htmlGenerator.generate_type_pages()
+	htmlGenerator.generate_nant_task_pages()
