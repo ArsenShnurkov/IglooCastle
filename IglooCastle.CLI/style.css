@@ -1,6 +1,7 @@
-﻿body {
+﻿body, table {
     font-family: Verdana;
-    font-size: 10pt
+    font-size: 10pt;
+    text-align: left;
 }
 
 header {

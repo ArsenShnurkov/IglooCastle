@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace IglooCastle.CLI
 {
@@ -20,10 +22,10 @@ namespace IglooCastle.CLI
 			set { _constructors = value ?? new ConstructorElement[0]; }
 		}
 
-		public PropertyElement[] Properties
+		public IEnumerable<PropertyElement> Properties
 		{
-			get { return _properties; }
-			set { _properties = value ?? new PropertyElement[0]; }
+			get { return _properties.OrderBy(p => p.Property.Name); }
+			set { _properties = (value ?? Enumerable.Empty<PropertyElement>()).ToArray(); }
 		}
 
 		public MethodElement[] Methods
