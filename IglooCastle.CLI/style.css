@@ -6,17 +6,49 @@
 
 header {
     background: #efefef;
-    padding: 0.5em;
+    padding: 1%;
     float: left;
-    margin: 0 3em 0 0;
+    margin: 0;
+    width: 23%;
+    overflow: scroll;
 }
 
 section {
 	float: left;
+    width: 73%;
+    padding: 1%;
 }
 
 footer {
 	clear: both;
     border-top: 1px solid #ccc;
     padding-top: 1em;
+}
+
+header ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+header ol ol {
+    padding: 0 0 0 20px;
+}
+
+.js-expander {
+    background: white;
+    border: 1px solid black;
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 10px;
+    margin-right: 4px;
+    cursor: pointer;
+    font-family: monospace;
+}
+
+li.selected > a {
+    font-weight: bold;
 }
