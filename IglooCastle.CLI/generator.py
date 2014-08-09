@@ -15,6 +15,8 @@ def flatten(something):
 		else:
 			yield x
 
+def escape(str):
+	return str.Replace('`', '_')
 
 # Some naming conventions:
 # 'type_element' is a TypeElement instance
@@ -35,7 +37,7 @@ class FilenameProvider:
 		else:
 			t = dotnet_type
 
-		return "T_" + t.FullName + ".html"
+		return "T_" + escape(t.FullName) + ".html"
 
 	def property(self, dotnet_type, property):
 		if dotnet_type.IsGenericType and not dotnet_type.IsGenericTypeDefinition:
@@ -43,20 +45,19 @@ class FilenameProvider:
 		else:
 			t = dotnet_type
 
-		return "P_" + t.FullName + "." + property.Name + ".html"
+		return "P_" + escape(t.FullName) + "." + property.Name + ".html"
 
 	def namespace(self, str):
 		return "N_" + str + ".html"
-
 
 class HtmlTemplate:
 	def __init__(self):
 		self.title  = ""
 		self.h1     = ""
-		self.header = ""
+		self.nav    = ""
 		self.main   = ""
 		self.footer = ""
-		self.file  = ""
+		self.file   = ""
 
 	def render(self):
 		return """<html>
@@ -64,22 +65,22 @@ class HtmlTemplate:
 					<title>%s</title>
 				</head>
 				<body>
-					<h1>%s</h1>
-					<!-- header -->
-					<header>
-					%s
-					</header>
+					<!-- left side navigation -->
+					<nav>
+						%s
+					</nav>
 					<!-- main area -->
 					<section>
-					%s
+						<h1>%s</h1>
+						%s
 					</section>
 					<!-- footer -->
 					<footer>
-					%s
+						%s
 					</footer>
 				</body>
 			</html>
-	""" % (self.title, self.h1 or self.title, self.header, self.main, self.footer)
+	""" % (self.title, self.nav, self.h1 or self.title, self.main, self.footer)
 
 	def write_to(self, file = None):
 		f = open(file or self.file, 'w')
@@ -182,7 +183,7 @@ class HtmlGenerator:
 		print "Generating page for namespace %s" % namespace
 		html_template        = HtmlTemplate()
 		html_template.title  = namespace + " Namespace"
-		html_template.header = self.nav()
+		html_template.nav    = self.nav()
 		html_template.footer = self.__footer()
 		html_template.file   = self.filenameProvider.namespace(namespace)
 		return html_template
@@ -191,18 +192,46 @@ class HtmlGenerator:
 		print "Namespaces:"
 		return [self.generate_namespace_page(n) for n in self.documentation.Namespaces]
 
-	def generate_property_page(self, type_element, property_element):
+	def generate_property_page(self, type_element, type_helper, property_element):
 		property = property_element.Property
 		property_name = property.Name
 
+		def syntax():
+			getter = property_element.Property.GetGetMethod(True) if property_element.CanRead else None
+			setter = property_element.Property.GetSetMethod(True) if property_element.CanWrite else None
+			getter_attr = getter.Attributes if getter else None
+			setter_attr = setter.Attributes if setter else None
+
+			getter_str = ""
+			if getter_attr:
+				getter_str = "get;"
+
+			setter_str = setter_attr.ToString() + " set;" if setter_attr else ""
+
+			access = ""
+			if getter_attr and not type_element.IsInterface: # all interface members are public
+				access = getter_attr.ToString()
+
+			return "%s %s %s { %s %s }" % (access, self.type_link(property_element.PropertyType), property_element.Name, getter_str, setter_str)
+
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
-		html_template.header = self.nav()
+		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), property_name, "Property")
+		html_template.nav    = self.nav()
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", property_element.XmlComment.Summary())
+				<p>%s</p>
+				""", property_element.XmlComment.Summary()) + \
+				"""
+				<h2>Syntax</h2>
+				<code>
+				%s
+				</code>
+				""" % syntax()
+
+
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.property(type_element.Type, property)
+		html_template.file   = self.filenameProvider.property(type_element.Type, property_element)
 		return html_template
 
 	def generate_type_page(self, type_element):
@@ -214,7 +243,7 @@ class HtmlGenerator:
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (fullName, type_kind)
-		html_template.header = self.nav()
+		html_template.nav    = self.nav()
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", type_element.XmlComment.Summary()) + \
@@ -227,7 +256,7 @@ class HtmlGenerator:
 		html_template.file   = self.filenameProvider.type(type_element.Type)
 
 		result = [ html_template ]
-		result.extend(self.generate_property_page(type_element, p) for p in type_element.Properties)
+		result.extend(self.generate_property_page(type_element, type_helper, p) for p in type_element.Properties)
 		return result
 
 	def generate_type_pages(self):
@@ -253,9 +282,9 @@ class HtmlGenerator:
 		typeHelper = self.__type_helper(dotnet_type)
 		link = typeHelper.link()
 		if link:
-			print "test"
+			# print "test"
 			result = "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
-			print "test 2"
+			# print "test 2"
 		else:
 			result = typeHelper.name()
 

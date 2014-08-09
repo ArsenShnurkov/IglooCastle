@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 
 namespace IglooCastle.CLI
@@ -18,6 +19,21 @@ namespace IglooCastle.CLI
 		public Type PropertyType
 		{
 			get { return Member.PropertyType; }
+		}
+
+		public bool CanRead { get { return Member.CanRead; } }
+
+		public bool CanWrite { get { return Member.CanWrite; } }
+
+		public PropertyElement BasePropertyElement()
+		{
+			TypeElement baseTypeElement = OwnerType.BaseTypeElement;
+			if (baseTypeElement == null)
+			{
+				return null;
+			}
+
+			return baseTypeElement.Properties.FirstOrDefault(p => p.Name == Name);
 		}
 	}
 }

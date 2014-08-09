@@ -64,7 +64,7 @@ namespace IglooCastle.CLI
 
 		public Type Normalize(Type type)
 		{
-			if (type.ContainsGenericParameters && type.IsGenericType)
+			if (type.IsGenericType && !type.IsGenericTypeDefinition)
 			{
 				return type.GetGenericTypeDefinition();
 			}
@@ -98,10 +98,22 @@ namespace IglooCastle.CLI
 
 		private IXmlComment GetXmlComment(PropertyElement propertyElement)
 		{
-			return propertyElement != null
-				       ? GetXmlComment(
-						   "//member[@name=\"P:" + propertyElement.Property.ReflectedType.FullName + "." + propertyElement.Property.Name + "\"]")
-				       : null;
+			IXmlComment result = null;
+
+			while (propertyElement != null && result == null)
+			{
+				result = GetXmlComment("//member[@name=\"P:" +
+					propertyElement.Property.ReflectedType.FullName + "." +
+					propertyElement.Property.Name + "\"]");
+
+				if (result == null)
+				{
+					// try base type?
+					propertyElement = propertyElement.BasePropertyElement();
+				}
+			}
+
+			return result;
 		}
 
 		private IXmlComment GetXmlComment(MethodElement methodElement)

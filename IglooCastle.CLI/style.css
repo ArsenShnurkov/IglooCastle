@@ -1,10 +1,15 @@
-﻿body, table {
+﻿body {
+    margin: 0;
+    padding: 0;
+}
+
+body, table {
     font-family: Verdana;
     font-size: 10pt;
     text-align: left;
 }
 
-header {
+nav {
     background: #efefef;
     padding: 1%;
     float: left;
@@ -25,13 +30,13 @@ footer {
     padding-top: 1em;
 }
 
-header ol {
+nav ol {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-header ol ol {
+nav ol ol {
     padding: 0 0 0 20px;
 }
 

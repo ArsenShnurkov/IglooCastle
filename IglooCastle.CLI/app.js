@@ -17,7 +17,7 @@ $(function() {
 	});
 
 	// collapse up to class level initially
-	$('header > ol > li > ol > li .js-expander').each(function() {
+	$('nav > ol > li > ol > li .js-expander').each(function() {
 		var $jsExpander = $(this),
 			$li = $jsExpander.closest('li'),
 			$ol = $li.children('ol');
@@ -28,7 +28,7 @@ $(function() {
 	});
 
 	// but expand the selected and mark it bold
-	$('header a').each(function() {
+	$('nav a').each(function() {
 		var $a = $(this),
 			$li = $a.closest('li'),
 			$parents;

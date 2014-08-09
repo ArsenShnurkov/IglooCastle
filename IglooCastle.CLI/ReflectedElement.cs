@@ -28,6 +28,9 @@ namespace IglooCastle.CLI
 			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
 		}
 
+		/// <summary>
+		/// Gets the name of the reflected element.
+		/// </summary>
 		public string Name
 		{
 			get { return Member.Name; }

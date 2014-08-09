@@ -69,6 +69,11 @@ namespace IglooCastle.CLI
 			get { return Type.IsGenericParameter; }
 		}
 
+		public bool IsInterface
+		{
+			get { return Type.IsInterface; }
+		}
+
 		public bool ContainsGenericParameters
 		{
 			get { return Type.ContainsGenericParameters; }
@@ -91,12 +96,48 @@ namespace IglooCastle.CLI
 
 		public ICollection<TypeElement> GetDerivedTypes()
 		{
-			return Documentation.Types.Where(t => t.Type != this.Type && Type.IsAssignableFrom(t.Type) ).ToList();
+			return Documentation.Types.Where(t =>
+				(
+					t.Type != this.Type && Type.IsAssignableFrom(t.Type))
+					||
+					t.HasBaseType(this)
+				).ToList();
 		}
 
 		public Type[] GetGenericArguments()
 		{
 			return Member.GetGenericArguments();
+		}
+
+		public TypeElement BaseTypeElement
+		{
+			get
+			{
+				Type baseType = BaseType;
+				if (baseType == null)
+				{
+					return null;
+				}
+
+				baseType = Documentation.Normalize(baseType);
+				return Documentation.Types.FirstOrDefault(t => t.Type == baseType);
+			}
+		}
+
+		public bool HasBaseType(TypeElement typeElement)
+		{
+			if (typeElement == null)
+			{
+				return false;
+			}
+
+			TypeElement baseTypeElement = BaseTypeElement;
+			while (baseTypeElement != null && baseTypeElement.Type != typeElement.Type)
+			{
+				baseTypeElement = baseTypeElement.BaseTypeElement;
+			}
+
+			return baseTypeElement != null;
 		}
 	}
 }
