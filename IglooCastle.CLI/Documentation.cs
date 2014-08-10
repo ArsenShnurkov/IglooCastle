@@ -57,11 +57,17 @@ namespace IglooCastle.CLI
 			return Types.Any(t => t.Type == normalizedType);
 		}
 
+		/// <summary>
+		/// Normalizes the given type element.
+		/// </summary>
 		public TypeElement Normalize(TypeElement type)
 		{
 			return type;
 		}
 
+		/// <summary>
+		/// Normalizes the given type.
+		/// </summary>
 		public Type Normalize(Type type)
 		{
 			if (type.IsGenericType && !type.IsGenericTypeDefinition)
