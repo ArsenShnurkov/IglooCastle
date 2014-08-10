@@ -9,7 +9,7 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public ConstructorInfo Constructor
+		internal ConstructorInfo Constructor
 		{
 			get { return Member; }
 		}

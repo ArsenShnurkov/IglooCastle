@@ -11,12 +11,7 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public Type BaseType
-		{
-			get { return Member.BaseType; }
-		}
-
-		public Type Type
+		internal Type Type
 		{
 			get { return Member; }
 		}
@@ -54,41 +49,6 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		public bool IsArray
-		{
-			get { return Type.IsArray; }
-		}
-
-		public bool IsGenericType
-		{
-			get { return Type.IsGenericType; }
-		}
-
-		public bool IsGenericParameter
-		{
-			get { return Type.IsGenericParameter; }
-		}
-
-		public bool IsInterface
-		{
-			get { return Type.IsInterface; }
-		}
-
-		public bool ContainsGenericParameters
-		{
-			get { return Type.ContainsGenericParameters; }
-		}
-
-		public bool IsGenericTypeDefinition
-		{
-			get { return Type.IsGenericTypeDefinition; }
-		}
-
-		public string FullName
-		{
-			get { return Type.FullName; }
-		}
-
 		public Type[] GetInterfaces()
 		{
 			return Member.GetInterfaces();
@@ -113,7 +73,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				Type baseType = BaseType;
+				Type baseType = Type.BaseType;
 				if (baseType == null)
 				{
 					return null;

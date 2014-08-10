@@ -1,12 +1,15 @@
-﻿namespace IglooCastle.CLI
+﻿using System;
+using System.Dynamic;
+
+namespace IglooCastle.CLI
 {
 	/// <summary>
 	/// This is the root of all documentation elements.
 	/// </summary>
-	public abstract class DocumentationElement<T>
+	public abstract class DocumentationElement<T> : DynamicObject
 	{
 		private readonly Documentation _documentation;
-		
+
 		protected DocumentationElement(Documentation documentation, T member)
 		{
 			_documentation = documentation;
@@ -27,6 +30,16 @@
 		public Documentation Documentation
 		{
 			get { return _documentation; }
+		}
+
+		public override bool TryGetMember(
+			GetMemberBinder binder, out object result)
+		{
+			string name = binder.Name;
+			var pi = typeof(T).GetProperty(name);
+			var hasProperty = pi != null && pi.CanRead;
+			result = hasProperty ? pi.GetValue(Member) : null;
+			return hasProperty;
 		}
 	}
 }

@@ -13,6 +13,11 @@ namespace IglooCastle.CLI
 		{
 		}
 
+		public string Name
+		{
+			get { return Member.Name; }
+		}
+
 		public override IXmlComment XmlComment
 		{
 			get { return Documentation.GetXmlComment(this) ?? new MissingXmlComment(); }
@@ -26,19 +31,6 @@ namespace IglooCastle.CLI
 		public Attribute GetAttribute(string attributeName)
 		{
 			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
-		}
-
-		/// <summary>
-		/// Gets the name of the reflected element.
-		/// </summary>
-		public string Name
-		{
-			get { return Member.Name; }
-		}
-
-		public Type DeclaringType
-		{
-			get { return Member.DeclaringType; }
 		}
 
 		public IEnumerable<Attribute> GetCustomAttributes(bool inherit)

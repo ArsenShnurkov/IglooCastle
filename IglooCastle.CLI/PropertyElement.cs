@@ -11,19 +11,10 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public PropertyInfo Property
+		internal PropertyInfo Property
 		{
 			get { return Member; }
 		}
-
-		public Type PropertyType
-		{
-			get { return Member.PropertyType; }
-		}
-
-		public bool CanRead { get { return Member.CanRead; } }
-
-		public bool CanWrite { get { return Member.CanWrite; } }
 
 		public PropertyElement BasePropertyElement()
 		{
@@ -34,6 +25,16 @@ namespace IglooCastle.CLI
 			}
 
 			return baseTypeElement.Properties.FirstOrDefault(p => p.Name == Name);
+		}
+
+		public MethodInfo GetGetMethod(bool nonPublic)
+		{
+			return Property.GetGetMethod(nonPublic);
+		}
+
+		public MethodInfo GetSetMethod(bool nonPublic)
+		{
+			return Property.GetSetMethod(nonPublic);
 		}
 	}
 }

@@ -18,11 +18,6 @@ def flatten(something):
 def escape(str):
 	return str.Replace('`', '_')
 
-# Some naming conventions:
-# 'type_element' is a TypeElement instance
-# 'dotnet_type'  is a .NET Type instance
-# 'type'         is either a 'type_element' or a 'dotnet_type'
-
 #
 # generated filenames
 #
@@ -110,17 +105,17 @@ class HtmlTemplate:
 
 
 class TypeHelper:
-	def __init__(self, documentation, filenameProvider, dotnet_type):
-		self.documentation    = documentation
-		self.filenameProvider = filenameProvider
-		self.dotnet_type       = dotnet_type
+	def __init__(self, documentation, filename_provider, type):
+		self.documentation     = documentation
+		self.filename_provider = filename_provider
+		self.type              = type
 
 	def name(self):
-		if self.dotnet_type.IsGenericParameter:
+		if self.type.IsGenericParameter:
 			# e.g. T when found inside SomeType<T>
-			return self.dotnet_type.Name
+			return self.type.Name
 
-		t = self.documentation.Normalize(self.dotnet_type)
+		t = self.documentation.Normalize(self.type)
 
 		if t.IsGenericType:
 			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
@@ -128,11 +123,11 @@ class TypeHelper:
 			return self.__sysname(t) or t.FullName
 
 	def short_name(self):
-		if self.dotnet_type.IsGenericParameter:
+		if self.type.IsGenericParameter:
 			# e.g. T when found inside SomeType<T>
-			return self.dotnet_type.Name
+			return self.type.Name
 
-		t = self.documentation.Normalize(self.dotnet_type)
+		t = self.documentation.Normalize(self.type)
 
 		if t.IsGenericType:
 			return t.Name.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
@@ -141,13 +136,13 @@ class TypeHelper:
 
 	def type_kind(self):
 		type_kind = ""
-		if self.dotnet_type.IsEnum:
+		if self.type.IsEnum:
 			type_kind = "Enumeration"
-		elif self.dotnet_type.IsValueType:
+		elif self.type.IsValueType:
 			type_kind = "Struct"
-		elif self.dotnet_type.IsInterface:
+		elif self.type.IsInterface:
 			type_kind = "Interface"
-		elif self.dotnet_type.IsClass:
+		elif self.type.IsClass:
 			type_kind = "Class"
 		else:
 			# what else?
@@ -156,7 +151,7 @@ class TypeHelper:
 		return type_kind
 
 	def link(self):
-		t = self.dotnet_type
+		t = self.type
 		if t.IsArray:
 			raise ValueError("Can not link to an array")
 
@@ -164,7 +159,7 @@ class TypeHelper:
 			raise ValueError("Can not link to closed generic types")
 
 		if self.documentation.IsLocalType(t):
-			link = self.filenameProvider.type(t)
+			link = self.filename_provider.type(t)
 			return link
 		else:
 			return None
@@ -186,7 +181,7 @@ class TypeHelper:
 class HtmlGenerator:
 	def __init__(self, documentation):
 		self.documentation = documentation
-		self.filenameProvider    = FilenameProvider(documentation)
+		self.filename_provider    = FilenameProvider(documentation)
 
 	def generate_index_page(self):
 		pass
@@ -198,30 +193,29 @@ class HtmlGenerator:
 		html_template.title  = namespace + " Namespace"
 		html_template.nav    = self.nav()
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.namespace(namespace)
+		html_template.file   = self.filename_provider.namespace(namespace)
 		return html_template
 
 	def generate_namespace_pages(self):
 		print "Namespaces:"
 		return [self.generate_namespace_page(n) for n in self.documentation.Namespaces]
 
-	def generate_properties_page(self, type_element, type_helper):
+	def generate_properties_page(self, type, type_helper):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Properties" % type_helper.name()
 		html_template.h1     = "%s Properties" % type_helper.short_name()
 		html_template.nav    = self.nav()
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + p.Name + "</li>" for p in type_element.Properties)
+		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + p.Name + "</li>" for p in type.Properties)
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.properties(type_element.Type)
+		html_template.file   = self.filename_provider.properties(type)
 		return html_template
 
-	def generate_property_page(self, type_element, type_helper, property_element):
-		property = property_element.Property
+	def generate_property_page(self, type, type_helper, property):
 		property_name = property.Name
 
 		def syntax():
-			getter = property_element.Property.GetGetMethod(True) if property_element.CanRead else None
-			setter = property_element.Property.GetSetMethod(True) if property_element.CanWrite else None
+			getter = property.GetGetMethod(True) if property.CanRead else None
+			setter = property.GetSetMethod(True) if property.CanWrite else None
 			getter_attr = getter.Attributes if getter else None
 			setter_attr = setter.Attributes if setter else None
 
@@ -232,10 +226,10 @@ class HtmlGenerator:
 			setter_str = setter_attr.ToString() + " set;" if setter_attr else ""
 
 			access = ""
-			if getter_attr and not type_element.IsInterface: # all interface members are public
+			if getter_attr and not type.IsInterface: # all interface members are public
 				access = getter_attr.ToString()
 
-			return "%s %s %s { %s %s }" % (access, self.type_link(property_element.PropertyType), property_element.Name, getter_str, setter_str)
+			return "%s %s %s { %s %s }" % (access, self.type_link(property.PropertyType), property.Name, getter_str, setter_str)
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
@@ -244,7 +238,7 @@ class HtmlGenerator:
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>
-				""", property_element.XmlComment.Summary()) + \
+				""", property.XmlComment.Summary()) + \
 				"""
 				<h2>Syntax</h2>
 				<code>
@@ -254,32 +248,31 @@ class HtmlGenerator:
 
 
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.property(type_element.Type, property_element)
+		html_template.file   = self.filename_provider.property(type, property)
 		return html_template
 
-	def generate_methods_page(self, type_element, type_helper):
+	def generate_methods_page(self, type, type_helper):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Methods" % type_helper.name()
 		html_template.h1     = "%s Methods" % type_helper.short_name()
 		html_template.nav    = self.nav()
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + m.Name + "</li>" for m in type_element.Methods)
+		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + m.Name + "</li>" for m in type.Methods)
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.methods(type_element.Type)
+		html_template.file   = self.filename_provider.methods(type)
 		return html_template
 
-	def generate_method_page(self, type_element, type_helper, method_element):
-		method = method_element.Method
+	def generate_method_page(self, type, type_helper, method):
 		method_name = method.Name
 
 		def syntax():
 			method_attr = method.Attributes
 			access = ""
-			if method_attr and not type_element.IsInterface: # all interface members are public
+			if method_attr and not type.IsInterface: # all interface members are public
 				access = method_attr.ToString()
 
-			parameters = ", ".join( self.type_link(p.ParameterType) + " " + p.Name for p in method_element.GetParameters() )
+			parameters = ", ".join( self.type_link(p.ParameterType) + " " + p.Name for p in method.GetParameters() )
 
-			return "%s %s %s (%s)" % (access, self.type_link(method_element.ReturnType), method_element.Name, parameters)
+			return "%s %s %s (%s)" % (access, self.type_link(method.ReturnType), method.Name, parameters)
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (method_name, "Method")
@@ -288,7 +281,7 @@ class HtmlGenerator:
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>
-				""", method_element.XmlComment.Summary()) + \
+				""", method.XmlComment.Summary()) + \
 				"""
 				<h2>Syntax</h2>
 				<code>
@@ -298,13 +291,12 @@ class HtmlGenerator:
 
 
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.method(type_element.Type, method_element)
+		html_template.file   = self.filename_provider.method(type, method)
 		return html_template
 
-	def generate_type_page(self, type_element):
-		dotnet_type = type_element.Type
-		print "Generating page for type %s" % dotnet_type.ToString()
-		type_helper = self.__type_helper(dotnet_type)
+	def generate_type_page(self, type):
+		print "Generating page for type %s" % type.ToString()
+		type_helper = self.__type_helper(type)
 		fullName = type_helper.name()
 		type_kind = type_helper.type_kind()
 
@@ -313,43 +305,43 @@ class HtmlGenerator:
 		html_template.nav    = self.nav()
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", type_element.XmlComment.Summary()) + \
-			self.base_type_section(type_element) + \
-			self.interfaces_section(type_element) + \
-			self.derived_types_section(type_element) + \
-			self.constructors_section(type_element, type_helper) + \
-			self.properties_section(type_element) + self.methods_section(type_element)
+				<p>%s</p>""", type.XmlComment.Summary()) + \
+			self.base_type_section(type) + \
+			self.interfaces_section(type) + \
+			self.derived_types_section(type) + \
+			self.constructors_section(type, type_helper) + \
+			self.properties_section(type) + self.methods_section(type)
 		html_template.footer = self.__footer()
-		html_template.file   = self.filenameProvider.type(type_element.Type)
+		html_template.file   = self.filename_provider.type(type)
 
 		result = [ html_template ]
-		result.append(self.generate_properties_page(type_element, type_helper))
-		result.extend(self.generate_property_page(type_element, type_helper, p) for p in type_element.Properties)
-		result.append(self.generate_methods_page(type_element, type_helper))
-		result.extend(self.generate_method_page(type_element, type_helper, m) for m in type_element.Methods)
+		result.append(self.generate_properties_page(type, type_helper))
+		result.extend(self.generate_property_page(type, type_helper, p) for p in type.Properties)
+		result.append(self.generate_methods_page(type, type_helper))
+		result.extend(self.generate_method_page(type, type_helper, m) for m in type.Methods)
 		return result
 
 	def generate_type_pages(self):
 		print "Types:"
-		return [self.generate_type_page(type_element) for type_element in self.documentation.Types]
+		return [self.generate_type_page(type) for type in self.documentation.Types]
 
 	def generate_nant_task_pages(self):
 		print "NAnt tasks:"
-		for type_element in self.documentation.Types:
-			if type_element.HasAttribute('NAnt.Core.Attributes.TaskName'):
-				taskName = type_element.GetAttribute('NAnt.Core.Attributes.TaskName').Name
+		for type in self.documentation.Types:
+			if type.HasAttribute('NAnt.Core.Attributes.TaskName'):
+				taskName = type.GetAttribute('NAnt.Core.Attributes.TaskName').Name
 				print "todo: generate page for nant task " + taskName
 
-	def type_link(self, dotnet_type):
-		print "type_link %s" % dotnet_type.Name
+	def type_link(self, type):
+		print "type_link %s" % type.Name
 
-		if dotnet_type.IsArray:
-			return self.type_link(dotnet_type.GetElementType()) + "[]"
+		if type.IsArray:
+			return self.type_link(type.GetElementType()) + "[]"
 
-		if dotnet_type.IsGenericType and not dotnet_type.IsGenericTypeDefinition:
-			return self.type_link(dotnet_type.GetGenericTypeDefinition())
+		if type.IsGenericType and not type.IsGenericTypeDefinition:
+			return self.type_link(type.GetGenericTypeDefinition())
 
-		typeHelper = self.__type_helper(dotnet_type)
+		typeHelper = self.__type_helper(type)
 		link = typeHelper.link()
 		if link:
 			# print "test"
@@ -362,8 +354,9 @@ class HtmlGenerator:
 		return result
 
 	def exclude_attribute(self, attribute):
-		if (attribute.GetType().Name == "__DynamicallyInvokableAttribute"):
+		if attribute.GetType().Name == "__DynamicallyInvokableAttribute":
 			return True
+
 		return isinstance(attribute, (
 			System.Runtime.CompilerServices.ExtensionAttribute,
 			System.Runtime.TargetedPatchingOptOutAttribute,
@@ -388,27 +381,28 @@ class HtmlGenerator:
 	def format_parameters(self, something):
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
 
-	def inherited_from(self, type_element, memberElement):
-		if memberElement.DeclaringType != type_element.Type:
+	def inherited_from(self, type, memberElement):
+		# TODO: this is the only remaining part where we need to call .Member
+		if memberElement.DeclaringType != type.Member:
 			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.DeclaringType)
 		else:
 			inheritedLink = ""
 		return inheritedLink
 
-	def constructors_section(self, type_element, type_helper):
-		print "constructors_section"
+	def constructors_section(self, type, type_helper):
 
-		def constructor_list_item(constructor_element):
-			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor_element.Constructor) )
+		def constructor_list_item(constructor):
+			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor) )
 
 		return HtmlTemplate.fmt_non_empty(
 			"<h2>Constructors</h2><ul>%s</ul>",
-			"".join(constructor_list_item(c) for c in type_element.Constructors))
+			"".join(constructor_list_item(c) for c in type.Constructors))
 
 	def base_type_section(self, type):
 		base_type = type.BaseType
 		if not base_type or base_type.FullName == "System.Object":
 			return ""
+
 		return "<p>Inherits from %s</p>" % self.type_link(base_type)
 
 	def interfaces_section(self, type):
@@ -418,23 +412,19 @@ class HtmlGenerator:
 
 		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_link(t) for t in interfaces)
 
-	def derived_types_section(self, type_element):
-		print "derived_types_section"
-
-		derived_types = type_element.GetDerivedTypes()
+	def derived_types_section(self, type):
+		derived_types = type.GetDerivedTypes()
 		if not derived_types:
 			return ""
 
-		print "derived_types_section"
-
 		return "<p>Known derived types: %s</p>" % ", ".join(self.type_link(t) for t in derived_types)
 
-	def properties_section(self, type_element):
-		def property_list_item(property_element):
-			name        = property_element.Name
-			ptype       = self.type_link(property_element.PropertyType)
-			description = property_element.XmlComment.Summary() + " " + self.inherited_from(type_element, property_element)
-			link        = self.filenameProvider.property(type_element.Type, property_element)
+	def properties_section(self, type):
+		def property_list_item(property):
+			name        = property.Name
+			ptype       = self.type_link(property.PropertyType)
+			description = property.XmlComment.Summary() + " " + self.inherited_from(type, property)
+			link        = self.filename_provider.property(type, property)
 			return """<tr>
 			<td><a href=\"%s\">%s</a></td>
 			<td>%s</td>
@@ -455,19 +445,19 @@ class HtmlGenerator:
 				%s
 				</tbody>
 			</table>""",
-			"".join(property_list_item(p) for p in type_element.Properties))
+			"".join(property_list_item(p) for p in type.Properties))
 
-	def is_extension_method(self, method_element):
+	def is_extension_method(self, method):
 		attributes = [x
-			for x in method_element.Method.GetCustomAttributes(False)
+			for x in method.GetCustomAttributes(False)
 			if isinstance(x, System.Runtime.CompilerServices.ExtensionAttribute)]
 		return len(attributes) > 0
 
-	def methods_section(self, type_element):
-		def method_list_item(type_element, memberElement):
-			inheritedLink = self.inherited_from(type_element, memberElement)
+	def methods_section(self, type):
+		def method_list_item(type, memberElement):
+			inheritedLink = self.inherited_from(type, memberElement)
 			is_extension_method = self.is_extension_method(memberElement)
-			parameters_string = ",".join(self.format_parameter(p) for p in memberElement.Method.GetParameters())
+			parameters_string = ",".join(self.format_parameter(p) for p in memberElement.GetParameters())
 			if is_extension_method:
 				parameters_string = "this " + parameters_string
 
@@ -487,40 +477,40 @@ class HtmlGenerator:
 			return result
 		return HtmlTemplate.fmt_non_empty(
 			"<h2>Methods</h2><ul>%s</ul>",
-			"".join(method_list_item(type_element, m) for m in type_element.Methods))
+			"".join(method_list_item(type, m) for m in type.Methods))
 
 	def nav(self):
 		return "<ol>%s</ol>" % "".join(self.nav_namespace(n) for n in self.documentation.Namespaces)
 
 	def nav_namespace(self, n):
-		result = "<li><span class=\"js-expander\">-</span><a href=\"%s\">%s</a>" % ( self.filenameProvider.namespace(n.Namespace), n.Namespace + " Namespace" )
+		result = "<li><span class=\"js-expander\">-</span><a href=\"%s\">%s</a>" % ( self.filename_provider.namespace(n.Namespace), n.Namespace + " Namespace" )
 		result += ( "<ol>%s</ol>" % "".join(self.nav_type(n, t) for t in n.Types) )
 		result += "</ol>" # /types
 		result += "</li>" # /namespace
 		return result
 
 	def nav_type(self, n, t):
-		typeHelper = self.__type_helper(t.Type)
+		typeHelper = self.__type_helper(t)
 		result = "<li><span class=\"js-expander\">-</span>"
 		result += ( "<a href=\"%s\">%s</a>" % (typeHelper.link(), typeHelper.short_name() + " " + typeHelper.type_kind()) )
 		result += "<ol>"
 
 		if len(t.Properties):
-			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Properties</a>" % self.filenameProvider.properties(t.Type)
+			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Properties</a>" % self.filename_provider.properties(t)
 			result += "<ol>"
 			for p in t.Properties:
 				result += "<li>"
-				result += ( "<a href=\"%s\">%s</a>" % (self.filenameProvider.property(t.Type, p), p.Name) )
+				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.property(t, p), p.Name) )
 				result += "</li>" # /type property
 			result += "</ol>" # /type properties
 			result += "</li>" #/type properties group
 
 		if (len(t.Methods)):
-			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Methods</a>" % self.filenameProvider.methods(t.Type)
+			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Methods</a>" % self.filename_provider.methods(t)
 			result += "<ol>"
 			for m in t.Methods:
 				result += "<li>"
-				result += ( "<a href=\"%s\">%s</a>" % (self.filenameProvider.method(t.Type, m), m.Name) )
+				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.method(t, m), m.Name) )
 				result += "</li>" # /type method
 			result += "</ol>" # /type methods
 			result += "</li>" #/type methods group
@@ -530,8 +520,8 @@ class HtmlGenerator:
 		return result
 
 
-	def __type_helper(self, dotNetType):
-		return TypeHelper(self.documentation, self.filenameProvider, dotNetType)
+	def __type_helper(self, type):
+		return TypeHelper(self.documentation, self.filename_provider, type)
 
 	def __footer(self):
 		return """Generated by IglooCastle at

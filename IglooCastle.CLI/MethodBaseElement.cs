@@ -14,13 +14,5 @@ namespace IglooCastle.CLI
 		{
 			return Member.GetParameters();
 		}
-
-		public MethodAttributes Attributes
-		{
-			get
-			{
-				return Member.Attributes;
-			}
-		}
 	}
 }

@@ -10,14 +10,9 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public MethodInfo Method
+		internal MethodInfo Method
 		{
 			get { return Member; }
-		}
-
-		public Type ReturnType
-		{
-			get { return Member.ReturnType; }
 		}
 	}
 }
