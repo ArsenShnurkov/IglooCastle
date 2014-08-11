@@ -71,6 +71,7 @@
     <Compile Include="ConstructorElement.cs" />
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
+    <Compile Include="Elements.cs" />
     <Compile Include="IXmlComment.cs" />
     <Compile Include="MethodBaseElement.cs" />
     <Compile Include="MethodElement.cs" />

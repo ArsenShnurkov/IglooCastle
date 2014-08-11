@@ -23,9 +23,6 @@ def escape(str):
 #
 
 class FilenameProvider:
-	def __init__(self, documentation):
-		self.documentation = documentation
-
 	def namespace(self, str):
 		return "N_" + str + ".html"
 
@@ -178,10 +175,132 @@ class TypeHelper:
 		else:
 			return None
 
+class NavigationNode:
+	def __init__(self):
+		self.filename_provider = FilenameProvider()
+		self.EXPANDER = "<span class=\"js-expander\">-</span>"
+		pass
+
+	def nav_html(self):
+		children_html = "".join(child.nav_html() for child in self.children())
+		node_html     = "<a href=\"%s\">%s</a>" % (self.href(), self.text())
+		if len(children_html):
+			return "<li>%s %s<ol>%s</ol></li>" % (self.EXPANDER, node_html, children_html)
+		else:
+			return "<li>%s</li>" % node_html
+
+	def href(self):
+		raise ValueError('You need to override href()')
+
+	def text(self):
+		raise ValueError('You need to override text()')
+
+	def children(self):
+		return []
+
+
+class NavigationNamespaceNode(NavigationNode):
+	def __init__(self, namespace_element):
+		NavigationNode.__init__(self)
+		self.namespace_element = namespace_element
+
+	def href(self):
+		return self.filename_provider.namespace(self.namespace_element.Namespace)
+
+	def text(self):
+		return self.namespace_element.Namespace + " Namespace"
+
+	def children(self):
+		return [ NavigationTypeNode(t) for t in self.namespace_element.Types ]
+
+
+class NavigationTypeNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
+
+	def href(self):
+		return self.filename_provider.type(self.type_element)
+
+	def text(self):
+		type_helper = TypeHelper(self.type_element.Documentation, self.filename_provider, self.type_element)
+		return type_helper.short_name() + " " + type_helper.type_kind()
+
+	def children(self):
+		result = []
+		if len(self.type_element.DeclaredProperties):
+			result.append(NavigationPropertiesNode(self.type_element))
+
+		if len(self.type_element.DeclaredMethods):
+			result.append(NavigationMethodsNode(self.type_element))
+
+		return result
+
+
+class NavigationPropertiesNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
+
+	def href(self):
+		return self.filename_provider.properties(self.type_element)
+
+	def text(self):
+		return "Properties"
+
+	def children(self):
+		return [ NavigationPropertyNode(p) for p in self.type_element.DeclaredProperties ]
+
+
+class NavigationMethodsNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
+
+	def href(self):
+		return self.filename_provider.methods(self.type_element)
+
+	def text(self):
+		return "Methods"
+
+	def children(self):
+		return [ NavigationMethodNode(m) for m in self.type_element.DeclaredMethods ]
+
+
+class NavigationPropertyNode(NavigationNode):
+	def __init__(self, property_element):
+		NavigationNode.__init__(self)
+		self.property_element = property_element
+
+	def href(self):
+		return self.filename_provider.property(self.property_element.OwnerType, self.property_element)
+
+	def text(self):
+		return self.property_element.Name
+
+
+class NavigationMethodNode(NavigationNode):
+	def __init__(self, method_element):
+		NavigationNode.__init__(self)
+		self.method_element = method_element
+
+	def href(self):
+		return self.filename_provider.method(self.method_element.OwnerType, self.method_element)
+
+	def text(self):
+		return self.method_element.Name
+
+
 class HtmlGenerator:
 	def __init__(self, documentation):
-		self.documentation = documentation
-		self.filename_provider    = FilenameProvider(documentation)
+		self.documentation      = documentation
+		self.filename_provider  = FilenameProvider()
+
+		# The HTML of the left-side navigation tree
+		self.__nav              = None
+
+		# The top-level navigation nodes that comprise the left-side navigation tree
+		self.__navigation_nodes = None
 
 	def generate_index_page(self):
 		pass
@@ -302,6 +421,7 @@ class HtmlGenerator:
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (fullName, type_kind)
+		html_template.h1     = "%s %s" % (type_helper.short_name(), type_kind)
 		html_template.nav    = self.nav()
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
@@ -479,45 +599,12 @@ class HtmlGenerator:
 			"".join(method_list_item(type, m) for m in type.Methods))
 
 	def nav(self):
-		return "<ol>%s</ol>" % "".join(self.nav_namespace(n) for n in self.documentation.Namespaces)
+		if not self.__nav:
+			print "Generating navigation"
+			self.__navigation_nodes = [ NavigationNamespaceNode(n) for n in self.documentation.Namespaces ]
+			self.__nav = "<ol>%s</ol>" % "".join(n.nav_html() for n in self.__navigation_nodes)
 
-	def nav_namespace(self, n):
-		result = "<li><span class=\"js-expander\">-</span><a href=\"%s\">%s</a>" % ( self.filename_provider.namespace(n.Namespace), n.Namespace + " Namespace" )
-		result += ( "<ol>%s</ol>" % "".join(self.nav_type(n, t) for t in n.Types) )
-		result += "</ol>" # /types
-		result += "</li>" # /namespace
-		return result
-
-	def nav_type(self, n, t):
-		typeHelper = self.__type_helper(t)
-		result = "<li><span class=\"js-expander\">-</span>"
-		result += ( "<a href=\"%s\">%s</a>" % (typeHelper.link(), typeHelper.short_name() + " " + typeHelper.type_kind()) )
-		result += "<ol>"
-
-		if len(t.DeclaredProperties):
-			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Properties</a>" % self.filename_provider.properties(t)
-			result += "<ol>"
-			for p in t.DeclaredProperties:
-				result += "<li>"
-				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.property(t, p), p.Name) )
-				result += "</li>" # /type property
-			result += "</ol>" # /type properties
-			result += "</li>" #/type properties group
-
-		if (len(t.DeclaredMethods)):
-			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Methods</a>" % self.filename_provider.methods(t)
-			result += "<ol>"
-			for m in t.DeclaredMethods:
-				result += "<li>"
-				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.method(t, m), m.Name) )
-				result += "</li>" # /type method
-			result += "</ol>" # /type methods
-			result += "</li>" #/type methods group
-
-		result += "</ol>" # /type member groups
-		result += "</li>" # /type
-		return result
-
+		return self.__nav
 
 	def __type_helper(self, type):
 		return TypeHelper(self.documentation, self.filename_provider, type)
