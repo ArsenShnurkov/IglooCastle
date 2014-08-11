@@ -316,9 +316,9 @@ class HtmlGenerator:
 
 		result = [ html_template ]
 		result.append(self.generate_properties_page(type, type_helper))
-		result.extend(self.generate_property_page(type, type_helper, p) for p in type.Properties)
+		result.extend(self.generate_property_page(type, type_helper, p) for p in type.DeclaredProperties)
 		result.append(self.generate_methods_page(type, type_helper))
-		result.extend(self.generate_method_page(type, type_helper, m) for m in type.Methods)
+		result.extend(self.generate_method_page(type, type_helper, m) for m in type.DeclaredMethods)
 		return result
 
 	def generate_type_pages(self):
@@ -382,8 +382,7 @@ class HtmlGenerator:
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
 
 	def inherited_from(self, type, memberElement):
-		# TODO: this is the only remaining part where we need to call .Member
-		if memberElement.DeclaringType != type.Member:
+		if memberElement.IsDeclaredIn(type):
 			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.DeclaringType)
 		else:
 			inheritedLink = ""
@@ -495,20 +494,20 @@ class HtmlGenerator:
 		result += ( "<a href=\"%s\">%s</a>" % (typeHelper.link(), typeHelper.short_name() + " " + typeHelper.type_kind()) )
 		result += "<ol>"
 
-		if len(t.Properties):
+		if len(t.DeclaredProperties):
 			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Properties</a>" % self.filename_provider.properties(t)
 			result += "<ol>"
-			for p in t.Properties:
+			for p in t.DeclaredProperties:
 				result += "<li>"
 				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.property(t, p), p.Name) )
 				result += "</li>" # /type property
 			result += "</ol>" # /type properties
 			result += "</li>" #/type properties group
 
-		if (len(t.Methods)):
+		if (len(t.DeclaredMethods)):
 			result += "<li><span class=\"js-expander\">-</span><a href=\"%s\">Methods</a>" % self.filename_provider.methods(t)
 			result += "<ol>"
-			for m in t.Methods:
+			for m in t.DeclaredMethods:
 				result += "<li>"
 				result += ( "<a href=\"%s\">%s</a>" % (self.filename_provider.method(t, m), m.Name) )
 				result += "</li>" # /type method

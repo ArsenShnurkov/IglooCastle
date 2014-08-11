@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
@@ -11,5 +12,15 @@ namespace IglooCastle.CLI
 		}
 
 		public TypeElement OwnerType { get; private set; }
+
+		public bool IsDeclaredIn(TypeElement typeElement)
+		{
+			return Member.DeclaringType == typeElement.Type;
+		}
+
+		public bool IsDeclaredIn(Type type)
+		{
+			return Member.DeclaringType == type;
+		}
 	}
 }
