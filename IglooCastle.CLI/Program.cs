@@ -34,6 +34,7 @@ namespace IglooCastle.CLI
 
 			documentation = args.Aggregate(documentation, (current, arg) => current.Merge(p.ProcessAssembly(arg)));
 			p.RunGenerator(documentation);
+			Console.WriteLine("All done");
 		}
 
 		private void AddAssemblyResolver()

@@ -175,6 +175,7 @@ class TypeHelper:
 		else:
 			return None
 
+
 class NavigationNode:
 	def __init__(self):
 		self.filename_provider = FilenameProvider()
@@ -182,12 +183,21 @@ class NavigationNode:
 		pass
 
 	def nav_html(self):
-		children_html = "".join(child.nav_html() for child in self.children())
+		children_html = self.children_nav_html()
 		node_html     = "<a href=\"%s\">%s</a>" % (self.href(), self.text())
 		if len(children_html):
 			return "<li>%s %s<ol>%s</ol></li>" % (self.EXPANDER, node_html, children_html)
 		else:
 			return "<li>%s</li>" % node_html
+
+	def contents_html_template(self):
+		return None
+
+	def visit(self, f):
+		"""Calls f for every node in the tree."""
+		f(self)
+		for child in self.children():
+			child.visit(f)
 
 	def href(self):
 		raise ValueError('You need to override href()')
@@ -197,6 +207,54 @@ class NavigationNode:
 
 	def children(self):
 		return []
+
+	def children_nav_html(self):
+		return "".join(child.nav_html() for child in self.children())
+
+	def type_link(self, type):
+		print "type_link %s" % type.Name
+
+		if type.IsArray:
+			return self.type_link(type.GetElementType()) + "[]"
+
+		if type.IsGenericType and not type.IsGenericTypeDefinition:
+			return self.type_link(type.GetGenericTypeDefinition())
+
+		typeHelper = self.type_helper(type)
+		link = typeHelper.link()
+		if link:
+			# print "test"
+			result = "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
+			# print "test 2"
+		else:
+			result = typeHelper.name()
+
+		print "type_link is %s" % result
+		return result
+
+	def type_helper(self, type):
+		return TypeHelper(self.documentation(), self.filename_provider, type)
+
+
+class NavigationDocumentationNode(NavigationNode):
+	def __init__(self, documentation):
+		NavigationNode.__init__(self)
+		self.documentation = documentation
+
+	def href(self):
+		return None
+
+	def text(self):
+		return None
+
+	def children(self):
+		return [ NavigationNamespaceNode(n) for n in self.documentation.Namespaces ]
+
+	def nav_html(self):
+		return "<ol>%s</ol>" % self.children_nav_html()
+
+	def documentation(self):
+		return self.documentation
 
 
 class NavigationNamespaceNode(NavigationNode):
@@ -213,6 +271,16 @@ class NavigationNamespaceNode(NavigationNode):
 	def children(self):
 		return [ NavigationTypeNode(t) for t in self.namespace_element.Types ]
 
+	def contents_html_template(self):
+		print "Generating page for namespace %s" % self.namespace_element.Namespace
+		html_template = HtmlTemplate()
+		html_template.title = self.text()
+		html_template.main  = "Hello, world!"
+		return html_template
+
+	def documentation(self):
+		return self.namespace_element.Documentation
+
 
 class NavigationTypeNode(NavigationNode):
 	def __init__(self, type_element):
@@ -223,7 +291,7 @@ class NavigationTypeNode(NavigationNode):
 		return self.filename_provider.type(self.type_element)
 
 	def text(self):
-		type_helper = TypeHelper(self.type_element.Documentation, self.filename_provider, self.type_element)
+		type_helper = self.type_helper(self.type_element)
 		return type_helper.short_name() + " " + type_helper.type_kind()
 
 	def children(self):
@@ -236,242 +304,125 @@ class NavigationTypeNode(NavigationNode):
 
 		return result
 
-
-class NavigationPropertiesNode(NavigationNode):
-	def __init__(self, type_element):
-		NavigationNode.__init__(self)
-		self.type_element = type_element
-
-	def href(self):
-		return self.filename_provider.properties(self.type_element)
-
-	def text(self):
-		return "Properties"
-
-	def children(self):
-		return [ NavigationPropertyNode(p) for p in self.type_element.DeclaredProperties ]
-
-
-class NavigationMethodsNode(NavigationNode):
-	def __init__(self, type_element):
-		NavigationNode.__init__(self)
-		self.type_element = type_element
-
-	def href(self):
-		return self.filename_provider.methods(self.type_element)
-
-	def text(self):
-		return "Methods"
-
-	def children(self):
-		return [ NavigationMethodNode(m) for m in self.type_element.DeclaredMethods ]
-
-
-class NavigationPropertyNode(NavigationNode):
-	def __init__(self, property_element):
-		NavigationNode.__init__(self)
-		self.property_element = property_element
-
-	def href(self):
-		return self.filename_provider.property(self.property_element.OwnerType, self.property_element)
-
-	def text(self):
-		return self.property_element.Name
-
-
-class NavigationMethodNode(NavigationNode):
-	def __init__(self, method_element):
-		NavigationNode.__init__(self)
-		self.method_element = method_element
-
-	def href(self):
-		return self.filename_provider.method(self.method_element.OwnerType, self.method_element)
-
-	def text(self):
-		return self.method_element.Name
-
-
-class HtmlGenerator:
-	def __init__(self, documentation):
-		self.documentation      = documentation
-		self.filename_provider  = FilenameProvider()
-
-		# The HTML of the left-side navigation tree
-		self.__nav              = None
-
-		# The top-level navigation nodes that comprise the left-side navigation tree
-		self.__navigation_nodes = None
-
-	def generate_index_page(self):
-		pass
-
-	def generate_namespace_page(self, namespaceElement):
-		namespace = namespaceElement.Namespace
-		print "Generating page for namespace %s" % namespace
-		html_template        = HtmlTemplate()
-		html_template.title  = namespace + " Namespace"
-		html_template.nav    = self.nav()
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.namespace(namespace)
-		return html_template
-
-	def generate_namespace_pages(self):
-		print "Namespaces:"
-		return [self.generate_namespace_page(n) for n in self.documentation.Namespaces]
-
-	def generate_properties_page(self, type, type_helper):
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s Properties" % type_helper.name()
-		html_template.h1     = "%s Properties" % type_helper.short_name()
-		html_template.nav    = self.nav()
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + p.Name + "</li>" for p in type.Properties)
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.properties(type)
-		return html_template
-
-	def generate_property_page(self, type, type_helper, property):
-		property_name = property.Name
-
-		def syntax():
-			getter = property.GetGetMethod(True) if property.CanRead else None
-			setter = property.GetSetMethod(True) if property.CanWrite else None
-			getter_attr = getter.Attributes if getter else None
-			setter_attr = setter.Attributes if setter else None
-
-			getter_str = ""
-			if getter_attr:
-				getter_str = "get;"
-
-			setter_str = setter_attr.ToString() + " set;" if setter_attr else ""
-
-			access = ""
-			if getter_attr and not type.IsInterface: # all interface members are public
-				access = getter_attr.ToString()
-
-			return "%s %s %s { %s %s }" % (access, self.type_link(property.PropertyType), property.Name, getter_str, setter_str)
-
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s %s" % (property_name, "Property")
-		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), property_name, "Property")
-		html_template.nav    = self.nav()
-		html_template.main   = HtmlTemplate.fmt_non_empty("""
-				<h2>Summary</h2>
-				<p>%s</p>
-				""", property.XmlComment.Summary()) + \
-				"""
-				<h2>Syntax</h2>
-				<code>
-				%s
-				</code>
-				""" % syntax()
-
-
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.property(type, property)
-		return html_template
-
-	def generate_methods_page(self, type, type_helper):
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s Methods" % type_helper.name()
-		html_template.h1     = "%s Methods" % type_helper.short_name()
-		html_template.nav    = self.nav()
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + m.Name + "</li>" for m in type.Methods)
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.methods(type)
-		return html_template
-
-	def generate_method_page(self, type, type_helper, method):
-		method_name = method.Name
-
-		def syntax():
-			method_attr = method.Attributes
-			access = ""
-			if method_attr and not type.IsInterface: # all interface members are public
-				access = method_attr.ToString()
-
-			parameters = ", ".join( self.type_link(p.ParameterType) + " " + p.Name for p in method.GetParameters() )
-
-			return "%s %s %s (%s)" % (access, self.type_link(method.ReturnType), method.Name, parameters)
-
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s %s" % (method_name, "Method")
-		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), method_name, "Method")
-		html_template.nav    = self.nav()
-		html_template.main   = HtmlTemplate.fmt_non_empty("""
-				<h2>Summary</h2>
-				<p>%s</p>
-				""", method.XmlComment.Summary()) + \
-				"""
-				<h2>Syntax</h2>
-				<code>
-				%s
-				</code>
-				""" % syntax()
-
-
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.method(type, method)
-		return html_template
-
-	def generate_type_page(self, type):
-		print "Generating page for type %s" % type.ToString()
-		type_helper = self.__type_helper(type)
+	def contents_html_template(self):
+		print "Generating page for type %s" % self.type_element.FullName
+		type_helper = self.type_helper(self.type_element)
 		fullName = type_helper.name()
 		type_kind = type_helper.type_kind()
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (fullName, type_kind)
 		html_template.h1     = "%s %s" % (type_helper.short_name(), type_kind)
-		html_template.nav    = self.nav()
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", type.XmlComment.Summary()) + \
-			self.base_type_section(type) + \
-			self.interfaces_section(type) + \
-			self.derived_types_section(type) + \
-			self.constructors_section(type, type_helper) + \
-			self.properties_section(type) + self.methods_section(type)
-		html_template.footer = self.__footer()
-		html_template.file   = self.filename_provider.type(type)
+				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
+			self.base_type_section() + \
+			self.interfaces_section() + \
+			self.derived_types_section() + \
+			self.constructors_section(type_helper) + \
+			self.properties_section() + self.methods_section()
 
-		result = [ html_template ]
-		result.append(self.generate_properties_page(type, type_helper))
-		result.extend(self.generate_property_page(type, type_helper, p) for p in type.DeclaredProperties)
-		result.append(self.generate_methods_page(type, type_helper))
-		result.extend(self.generate_method_page(type, type_helper, m) for m in type.DeclaredMethods)
-		return result
+		return html_template
 
-	def generate_type_pages(self):
-		print "Types:"
-		return [self.generate_type_page(type) for type in self.documentation.Types]
+	def constructors_section(self, type_helper):
 
-	def generate_nant_task_pages(self):
-		print "NAnt tasks:"
-		for type in self.documentation.Types:
-			if type.HasAttribute('NAnt.Core.Attributes.TaskName'):
-				taskName = type.GetAttribute('NAnt.Core.Attributes.TaskName').Name
-				print "todo: generate page for nant task " + taskName
+		def constructor_list_item(constructor):
+			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor) )
 
-	def type_link(self, type):
-		print "type_link %s" % type.Name
+		return HtmlTemplate.fmt_non_empty(
+			"<h2>Constructors</h2><ul>%s</ul>",
+			"".join(constructor_list_item(c) for c in self.type_element.Constructors))
 
-		if type.IsArray:
-			return self.type_link(type.GetElementType()) + "[]"
+	def base_type_section(self):
+		base_type = self.type_element.BaseType
+		if not base_type or base_type.FullName == "System.Object":
+			return ""
 
-		if type.IsGenericType and not type.IsGenericTypeDefinition:
-			return self.type_link(type.GetGenericTypeDefinition())
+		return "<p>Inherits from %s</p>" % self.type_link(base_type)
 
-		typeHelper = self.__type_helper(type)
-		link = typeHelper.link()
-		if link:
-			# print "test"
-			result = "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
-			# print "test 2"
+	def interfaces_section(self):
+		interfaces = self.type_element.GetInterfaces()
+		if not interfaces:
+			return ""
+
+		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_link(t) for t in interfaces)
+
+	def derived_types_section(self):
+		derived_types = self.type_element.GetDerivedTypes()
+		if not derived_types:
+			return ""
+
+		return "<p>Known derived types: %s</p>" % ", ".join(self.type_link(t) for t in derived_types)
+
+	def inherited_from(self, type, memberElement):
+		if memberElement.IsDeclaredIn(type):
+			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.DeclaringType)
 		else:
-			result = typeHelper.name()
+			inheritedLink = ""
+		return inheritedLink
 
-		print "type_link is %s" % result
-		return result
+	def properties_section(self):
+		def property_list_item(property):
+			name        = property.Name
+			ptype       = self.type_link(property.PropertyType)
+			description = property.XmlComment.Summary() + " " + self.inherited_from(self.type_element, property)
+			link        = self.filename_provider.property(self.type_element, property)
+			return """<tr>
+			<td><a href=\"%s\">%s</a></td>
+			<td>%s</td>
+			<td>%s</td>
+			</tr>""" % (link, name, ptype, description)
+
+		return HtmlTemplate.fmt_non_empty(
+			"""<h2>Properties</h2>
+			<table>
+				<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Description</th>
+				</tr>
+				</thead>
+				<tbody>
+				%s
+				</tbody>
+			</table>""",
+			"".join(property_list_item(p) for p in self.type_element.Properties))
+
+	def is_extension_method(self, method):
+		attributes = [x
+			for x in method.GetCustomAttributes(False)
+			if isinstance(x, System.Runtime.CompilerServices.ExtensionAttribute)]
+		return len(attributes) > 0
+
+	def methods_section(self):
+		def method_list_item(memberElement):
+			inheritedLink = self.inherited_from(self.type_element, memberElement)
+			is_extension_method = self.is_extension_method(memberElement)
+			parameters_string = ",".join(self.format_parameter(p) for p in memberElement.GetParameters())
+			if is_extension_method:
+				parameters_string = "this " + parameters_string
+
+			name = self.type_link(memberElement.ReturnType) + " " + \
+				memberElement.Name + "(" + \
+				parameters_string + \
+				")"
+
+			name = self.format_attributes(memberElement.GetCustomAttributes(False)) + name
+			result = """<li>
+				<dl>
+					<dt>%s</dt>
+					<dd>%s %s</dd>
+				</dl>
+			</li>""" % (name, memberElement.XmlComment.Summary(), inheritedLink)
+
+			return result
+		return HtmlTemplate.fmt_non_empty(
+			"<h2>Methods</h2><ul>%s</ul>",
+			"".join(method_list_item(m) for m in self.type_element.Methods))
+
+	def documentation(self):
+		return self.type_element.Documentation
 
 	def exclude_attribute(self, attribute):
 		if attribute.GetType().Name == "__DynamicallyInvokableAttribute":
@@ -501,134 +452,187 @@ class HtmlGenerator:
 	def format_parameters(self, something):
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
 
-	def inherited_from(self, type, memberElement):
-		if memberElement.IsDeclaredIn(type):
-			inheritedLink = "(inherited from %s)" % self.type_link(memberElement.DeclaringType)
-		else:
-			inheritedLink = ""
-		return inheritedLink
 
-	def constructors_section(self, type, type_helper):
+class NavigationPropertiesNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
 
-		def constructor_list_item(constructor):
-			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor) )
+	def href(self):
+		return self.filename_provider.properties(self.type_element)
 
-		return HtmlTemplate.fmt_non_empty(
-			"<h2>Constructors</h2><ul>%s</ul>",
-			"".join(constructor_list_item(c) for c in type.Constructors))
+	def text(self):
+		return "Properties"
 
-	def base_type_section(self, type):
-		base_type = type.BaseType
-		if not base_type or base_type.FullName == "System.Object":
-			return ""
+	def children(self):
+		return [ NavigationPropertyNode(p) for p in self.type_element.DeclaredProperties ]
 
-		return "<p>Inherits from %s</p>" % self.type_link(base_type)
+	def documentation(self):
+		return self.type_element.Documentation
 
-	def interfaces_section(self, type):
-		interfaces = type.GetInterfaces()
-		if not interfaces:
-			return ""
+	def contents_html_template(self):
+		type_helper = self.type_helper(self.type_element)
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s Properties" % type_helper.name()
+		html_template.h1     = "%s Properties" % type_helper.short_name()
+		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + p.Name + "</li>" for p in self.type_element.Properties)
+		return html_template
 
-		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_link(t) for t in interfaces)
 
-	def derived_types_section(self, type):
-		derived_types = type.GetDerivedTypes()
-		if not derived_types:
-			return ""
+class NavigationMethodsNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
 
-		return "<p>Known derived types: %s</p>" % ", ".join(self.type_link(t) for t in derived_types)
+	def href(self):
+		return self.filename_provider.methods(self.type_element)
 
-	def properties_section(self, type):
-		def property_list_item(property):
-			name        = property.Name
-			ptype       = self.type_link(property.PropertyType)
-			description = property.XmlComment.Summary() + " " + self.inherited_from(type, property)
-			link        = self.filename_provider.property(type, property)
-			return """<tr>
-			<td><a href=\"%s\">%s</a></td>
-			<td>%s</td>
-			<td>%s</td>
-			</tr>""" % (link, name, ptype, description)
+	def text(self):
+		return "Methods"
 
-		return HtmlTemplate.fmt_non_empty(
-			"""<h2>Properties</h2>
-			<table>
-				<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Description</th>
-				</tr>
-				</thead>
-				<tbody>
+	def children(self):
+		return [ NavigationMethodNode(m) for m in self.type_element.DeclaredMethods ]
+
+	def documentation(self):
+		return self.type_element.Documentation
+
+	def contents_html_template(self):
+		type_helper = self.type_helper(self.type_element)
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s Methods" % type_helper.name()
+		html_template.h1     = "%s Methods" % type_helper.short_name()
+		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + m.Name + "</li>" for m in self.type_element.Methods)
+		return html_template
+
+
+class NavigationPropertyNode(NavigationNode):
+	def __init__(self, property_element):
+		NavigationNode.__init__(self)
+		self.property_element = property_element
+
+	def href(self):
+		return self.filename_provider.property(self.property_element.OwnerType, self.property_element)
+
+	def text(self):
+		return self.property_element.Name
+
+	def documentation(self):
+		return self.property_element.Documentation
+
+	def contents_html_template(self):
+		property_name = self.property_element.Name
+		type_helper = self.type_helper(self.property_element.OwnerType)
+		def syntax():
+			getter = self.property_element.GetGetMethod(True) if self.property_element.CanRead else None
+			setter = self.property_element.GetSetMethod(True) if self.property_element.CanWrite else None
+			getter_attr = getter.Attributes if getter else None
+			setter_attr = setter.Attributes if setter else None
+
+			getter_str = ""
+			if getter_attr:
+				getter_str = "get;"
+
+			setter_str = setter_attr.ToString() + " set;" if setter_attr else ""
+
+			access = ""
+			if getter_attr and not self.property_element.OwnerType.IsInterface: # all interface members are public
+				access = getter_attr.ToString()
+
+			return "%s %s %s { %s %s }" % (access, self.type_link(self.property_element.PropertyType), self.property_element.Name, getter_str, setter_str)
+
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s %s" % (property_name, "Property")
+		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), property_name, "Property")
+		html_template.main   = HtmlTemplate.fmt_non_empty("""
+				<h2>Summary</h2>
+				<p>%s</p>
+				""", self.property_element.XmlComment.Summary()) + \
+				"""
+				<h2>Syntax</h2>
+				<code>
 				%s
-				</tbody>
-			</table>""",
-			"".join(property_list_item(p) for p in type.Properties))
+				</code>
+				""" % syntax()
+		return html_template
 
-	def is_extension_method(self, method):
-		attributes = [x
-			for x in method.GetCustomAttributes(False)
-			if isinstance(x, System.Runtime.CompilerServices.ExtensionAttribute)]
-		return len(attributes) > 0
 
-	def methods_section(self, type):
-		def method_list_item(type, memberElement):
-			inheritedLink = self.inherited_from(type, memberElement)
-			is_extension_method = self.is_extension_method(memberElement)
-			parameters_string = ",".join(self.format_parameter(p) for p in memberElement.GetParameters())
-			if is_extension_method:
-				parameters_string = "this " + parameters_string
+class NavigationMethodNode(NavigationNode):
+	def __init__(self, method_element):
+		NavigationNode.__init__(self)
+		self.method_element = method_element
 
-			name = self.type_link(memberElement.ReturnType) + " " + \
-				memberElement.Name + "(" + \
-				parameters_string + \
-				")"
+	def href(self):
+		return self.filename_provider.method(self.method_element.OwnerType, self.method_element)
 
-			name = self.format_attributes(memberElement.GetCustomAttributes(False)) + name
-			result = """<li>
-				<dl>
-					<dt>%s</dt>
-					<dd>%s %s</dd>
-				</dl>
-			</li>""" % (name, memberElement.XmlComment.Summary(), inheritedLink)
+	def text(self):
+		return self.method_element.Name
 
-			return result
-		return HtmlTemplate.fmt_non_empty(
-			"<h2>Methods</h2><ul>%s</ul>",
-			"".join(method_list_item(type, m) for m in type.Methods))
+	def documentation(self):
+		return self.method_element.Documentation
 
-	def nav(self):
-		if not self.__nav:
-			print "Generating navigation"
-			self.__navigation_nodes = [ NavigationNamespaceNode(n) for n in self.documentation.Namespaces ]
-			self.__nav = "<ol>%s</ol>" % "".join(n.nav_html() for n in self.__navigation_nodes)
+	def contents_html_template(self):
+		method_name = self.method_element.Name
+		type_helper = self.type_helper(self.method_element.OwnerType)
 
-		return self.__nav
+		def syntax():
+			method_attr = self.method_element.Attributes
+			access = ""
+			if method_attr and not self.method_element.OwnerType.IsInterface: # all interface members are public
+				access = method_attr.ToString()
 
-	def __type_helper(self, type):
-		return TypeHelper(self.documentation, self.filename_provider, type)
+			parameters = ", ".join( self.type_link(p.ParameterType) + " " + p.Name for p in self.method_element.GetParameters() )
 
-	def __footer(self):
-		return """Generated by IglooCastle at
+			return "%s %s %s (%s)" % (access, self.type_link(self.method_element.ReturnType), self.method_element.Name, parameters)
+
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s %s" % (method_name, "Method")
+		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), method_name, "Method")
+		html_template.main   = HtmlTemplate.fmt_non_empty("""
+				<h2>Summary</h2>
+				<p>%s</p>
+				""", self.method_element.XmlComment.Summary()) + \
+				"""
+				<h2>Syntax</h2>
+				<code>
+				%s
+				</code>
+				""" % syntax()
+		return html_template
+
+
+def make_visitor(nav, footer):
+	def visitor(navigation_node):
+		print "visting %s" % navigation_node
+		html_template = navigation_node.contents_html_template()
+		if not html_template:
+			return
+
+		html_template.nav    = nav
+		html_template.footer = footer
+		html_template.file   = navigation_node.href()
+		html_template.write_to()
+
+	return visitor
+
+#	def generate_nant_task_pages(self):
+#		print "NAnt tasks:"
+#		for type in self.documentation.Types:
+#			if type.HasAttribute('NAnt.Core.Attributes.TaskName'):
+#				taskName = type.GetAttribute('NAnt.Core.Attributes.TaskName').Name
+#				print "todo: generate page for nant task " + taskName
+
+def Generate(documentation):
+	"""Entry point for IglooCastle"""
+	print "Hello from python!"
+
+	root_nav_node = NavigationDocumentationNode(documentation)
+	nav           = root_nav_node.nav_html()
+	footer        = """Generated by IglooCastle at
 			""" + strftime("%Y-%m-%d %H:%M:%S", gmtime()) + """
 			<link type=\"text/css\" rel=\"stylesheet\" href=\"style.css\" />
 			<script src="jquery-1.11.1.min.js"></script>
 			<script src="app.js"></script>
 			</footer>"""
-
-
-def Generate(documentation):
-	"""Entry point for IglooCastle"""
-	print "Hello from python!"
-	htmlGenerator = HtmlGenerator(documentation)
-	htmlGenerator.generate_index_page()
-
-	pages = []
-	pages.extend(flatten(htmlGenerator.generate_namespace_pages()))
-	pages.extend(flatten(htmlGenerator.generate_type_pages()))
-
-	for page in pages:
-		page.write_to()
-
-	htmlGenerator.generate_nant_task_pages()
+	visitor = make_visitor(nav, footer)
+	root_nav_node.visit(visitor)
+	print "Python out!"
