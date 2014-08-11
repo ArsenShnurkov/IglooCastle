@@ -13,7 +13,8 @@ namespace IglooCastle.CLI
 
 		public string Section(string name)
 		{
-			return _documentationNode.SelectSingleNode(name).InnerXml;
+			XmlNode node = _documentationNode.SelectSingleNode(name);
+			return node != null ? node.InnerXml : string.Empty;
 		}
 
 		public string InnertText

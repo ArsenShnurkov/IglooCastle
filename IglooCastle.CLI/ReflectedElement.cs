@@ -33,6 +33,11 @@ namespace IglooCastle.CLI
 			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
 		}
 
+		/// <summary>
+		/// Gets the custom attributes of this member.
+		/// </summary>
+		/// <param name="inherit">Determines if inherited attributes should be returned also.</param>
+		/// <returns>A collection of <see cref="System.Attribute"/></returns>
 		public IEnumerable<Attribute> GetCustomAttributes(bool inherit)
 		{
 			return Member.GetCustomAttributes(inherit).Cast<Attribute>();
