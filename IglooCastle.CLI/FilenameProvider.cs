@@ -39,30 +39,23 @@ namespace IglooCastle.CLI
 
 		public string Filename(MethodElement method)
 		{
-			string parameters = string.Join("_", method.Method.GetParameters().Select(p => FilenamePartForParameter(p.ParameterType)));
-
-			/*
-* # BUG:
-# Writing file M_IglooCastle.CLI.TypeContainerExtensions.FilterTypes-IglooCastle.C
-# LI.ITypeContainer_System.Predicate`1[[IglooCastle.CLI.TypeElement, IglooCastle.C
-# LI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].html
-*/
-
-			var result = string.Format("M_{0}.{1}{2}", TypeFilename(method.Method.DeclaringType), method.Name, string.IsNullOrEmpty(parameters) ? string.Empty : "-" + parameters);
-			// BUG
-			if (result.Length > 80)
-			{
-				result = result.Substring(0, 80);
-			}
-
-			result += ".html";
-
+			string parameters = string.Join(",", method.Method.GetParameters().Select(p => FilenamePartForParameter(p.ParameterType)));
+			var result = string.Format("M_{0}.{1}{2}.html", TypeFilename(method.Method.DeclaringType), method.Name, string.IsNullOrEmpty(parameters) ? string.Empty : "-" + parameters);
 			return result;
 		}
 
 		public string FilenamePartForParameter(Type parameterType)
 		{
-			return SystemTypes.Alias(parameterType) ?? parameterType.FullName;
+			if (parameterType.IsGenericType)
+			{
+				Type[] genericArguments = parameterType.GetGenericArguments();
+				string genericType = parameterType.GetGenericTypeDefinition().FullName.Split('`')[0];
+				return genericType + "`" + string.Join(",", genericArguments.Select(FilenamePartForParameter));
+			}
+			else
+			{
+				return SystemTypes.Alias(parameterType) ?? parameterType.FullName;
+			}
 		}
 
 		public string TypeFilename(Type type)
@@ -72,7 +65,8 @@ namespace IglooCastle.CLI
 				type = type.GetGenericTypeDefinition();
 			}
 
-			var result = type.FullName.Replace('`', '_');
+			var result = type.FullName;
+			//var result = type.FullName.Replace('`', '_');
 			return result;
 		}
 

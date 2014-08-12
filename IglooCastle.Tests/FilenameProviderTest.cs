@@ -47,5 +47,25 @@ namespace IglooCastle.Tests
 			FilenameProvider filenameProvider = new FilenameProvider();
 			Assert.AreEqual(expected, filenameProvider.Filename(targetMethod));
 		}
+
+		[Test]
+		public void TestMethodWithParameterOfGenericType()
+		{
+			// public static ICollection<TypeElement> FilterTypes(this ITypeContainer typeContainer, Predicate<TypeElement> predicate)
+			const string expected =
+				"M_IglooCastle.CLI.TypeContainerExtensions.FilterTypes-IglooCastle.CLI.ITypeContainer-System.Predicate_IglooCastle.CLI.TypeElement.html";
+
+			// locate type
+			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(TypeContainerExtensions));
+
+			Func<ParameterInfo[], bool> matchTargetMethod =
+				parameters => parameters.Length == 2
+					&& parameters[0].ParameterType == typeof(ITypeContainer)
+					&& parameters[1].ParameterType == typeof(Predicate<TypeElement>);
+			MethodElement targetMethod = targetTypeElement.Methods.Single(m => matchTargetMethod(m.Member.GetParameters()));
+
+			FilenameProvider filenameProvider = new FilenameProvider();
+			Assert.AreEqual(expected, filenameProvider.Filename(targetMethod));
+		}
     }
 }

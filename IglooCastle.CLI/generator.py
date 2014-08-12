@@ -16,6 +16,11 @@ def flatten(something):
 		else:
 			yield x
 
+def escape(str):
+	return str.replace("`", "%60")
+
+def a(href, text):
+	return '<a href="%s">%s</a>' % (escape(href), text)
 
 class HtmlTemplate:
 	def __init__(self):
@@ -134,7 +139,7 @@ class NavigationNode:
 
 	def nav_html(self):
 		children_html = self.children_nav_html()
-		node_html     = "<a href=\"%s\">%s</a>" % (self.href(), self.text())
+		node_html     = a(self.href(), self.text())
 		if len(children_html):
 			return "<li>%s %s<ol>%s</ol></li>" % (self.EXPANDER, node_html, children_html)
 		else:
@@ -174,7 +179,7 @@ class NavigationNode:
 		link = typeHelper.link()
 		if link:
 			# print "test"
-			result = "<a href=\"%s\">%s</a>" % (link, typeHelper.short_name())
+			result = a(link, typeHelper.short_name())
 			# print "test 2"
 		else:
 			result = typeHelper.name()
@@ -190,14 +195,14 @@ class NavigationNode:
 		if not property_element.Documentation.IsLocalType(t):
 			return property_element.Name
 		else:
-			return '<a href="%s">%s</a>' % (self.filename_provider.Filename(property_element), property_element.Name)
+			return a(self.filename_provider.Filename(property_element), property_element.Name)
 
 	def method_link(self, method_element):
 		t = method_element.DeclaringType
 		if not method_element.Documentation.IsLocalType(t):
 			return method_element.Name
 		else:
-			return '<a href="%s">%s</a>' % (self.filename_provider.Filename(method_element), method_element.Name)
+			return a(self.filename_provider.Filename(method_element), method_element.Name)
 
 
 class NavigationDocumentationNode(NavigationNode):
