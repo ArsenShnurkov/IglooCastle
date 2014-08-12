@@ -7,7 +7,7 @@ using System.Xml;
 
 namespace IglooCastle.CLI
 {
-	public class Documentation
+	public class Documentation : ITypeContainer
 	{
 		private NamespaceElement[] _namespaces = new NamespaceElement[0];
 		private TypeElement[] _types = new TypeElement[0];
@@ -19,10 +19,10 @@ namespace IglooCastle.CLI
 			set { _namespaces = value ?? new NamespaceElement[0]; }
 		}
 
-		public TypeElement[] Types
+		public ICollection<TypeElement> Types
 		{
 			get { return _types; }
-			set { _types = value ?? new TypeElement[0]; }
+			set { _types = value != null ? value.ToArray() : new TypeElement[0]; }
 		}
 
 		public XmlDocument[] DocumentationSources
@@ -39,6 +39,20 @@ namespace IglooCastle.CLI
 					Types = Types.Union(that.Types).ToArray(),
 					DocumentationSources = DocumentationSources.Union(that.DocumentationSources).ToArray()
 				};
+		}
+
+		public void Scan(Assembly assembly)
+		{
+			HashSet<string> namespaces = new HashSet<string>();
+			List<TypeElement> types = new List<TypeElement>();
+			foreach (Type type in assembly.GetTypes().Where(t => t.IsVisible))
+			{
+				namespaces.Add(type.Namespace ?? string.Empty);
+				types.Add(new TypeElement(this, type));
+			}
+
+			Namespaces = namespaces.Select(n => new NamespaceElement(this, n)).ToArray();
+			Types = types.ToArray();
 		}
 
 		public bool IsLocalType(TypeElement type)

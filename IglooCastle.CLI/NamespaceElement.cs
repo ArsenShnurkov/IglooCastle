@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace IglooCastle.CLI
 {
-	public class NamespaceElement : DocumentationElement<string>
+	public class NamespaceElement : DocumentationElement<string>, ITypeContainer
 	{
 		/// <summary>
 		/// Creates an instance of this class.
@@ -32,9 +32,9 @@ namespace IglooCastle.CLI
 		/// <summary>
 		/// Gets the types of the documentation that belong to this namespace.
 		/// </summary>
-		public IEnumerable<TypeElement> Types
+		public ICollection<TypeElement> Types
 		{
-			get { return Documentation.Types.Where(t => t.Type.Namespace == Namespace).OrderBy(t => t.Type.Name); }
+			get { return Documentation.FilterTypes(t => t.Type.Namespace == Namespace); }
 		}
 	}
 }

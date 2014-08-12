@@ -6,6 +6,7 @@ from time import gmtime, strftime
 clr.AddReference("IglooCastle.CLI")
 import IglooCastle.CLI
 clr.ImportExtensions(IglooCastle.CLI)
+from IglooCastle.CLI import FilenameProvider
 
 def flatten(something):
 	for x in something:
@@ -15,45 +16,6 @@ def flatten(something):
 		else:
 			yield x
 
-def escape(str):
-	return str.Replace('`', '_')
-
-#
-# generated filenames
-#
-
-class FilenameProvider:
-	def namespace(self, str):
-		return "N_" + str + ".html"
-
-	def type(self, type):
-		return "T_" + self.__type_filename(type) + ".html"
-
-	def properties(self, type):
-		return "Properties_" + self.__type_filename(type) + ".html"
-
-	def property(self, type, property):
-		return "P_" + self.__type_filename(type) + "." + property.Name + ".html"
-
-	def methods(self, type):
-		return "Methods_" + self.__type_filename(type) + ".html"
-
-	def method(self, type, method):
-		def parameters():
-			parameters = method.GetParameters()
-			if not len(parameters):
-				return ""
-
-			return "-" + "_".join(p.ParameterType.FullName for p in parameters)
-
-		return "M_" + self.__type_filename(type) + "." + method.Name + parameters() + ".html"
-
-	def __type_filename(self, type):
-		if type.IsGenericType and not type.IsGenericTypeDefinition:
-			type = type.GetGenericTypeDefinition()
-
-		return escape(type.FullName)
-
 
 class HtmlTemplate:
 	def __init__(self):
@@ -62,7 +24,6 @@ class HtmlTemplate:
 		self.nav    = ""
 		self.main   = ""
 		self.footer = ""
-		self.file   = ""
 
 	def render(self):
 		return """<html>
@@ -87,8 +48,9 @@ class HtmlTemplate:
 			</html>
 	""" % (self.title, self.nav, self.h1 or self.title, self.main, self.footer)
 
-	def write_to(self, file = None):
-		f = open(file or self.file, 'w')
+	def write_to(self, file):
+		print "Writing file %s" % file
+		f = open(file, 'w')
 		f.write(self.render())
 		f.close()
 
@@ -117,7 +79,7 @@ class TypeHelper:
 		if t.IsGenericType:
 			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
 		else:
-			return self.__sysname(t) or t.FullName
+			return IglooCastle.CLI.SystemTypes.Alias(t) or t.FullName
 
 	def short_name(self):
 		if self.type.IsGenericParameter:
@@ -129,7 +91,7 @@ class TypeHelper:
 		if t.IsGenericType:
 			return t.Name.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
 		else:
-			return self.__sysname(t) or t.Name
+			return IglooCastle.CLI.SystemTypes.Alias(t) or t.Name
 
 	def type_kind(self):
 		type_kind = ""
@@ -156,24 +118,10 @@ class TypeHelper:
 			raise ValueError("Can not link to closed generic types")
 
 		if self.documentation.IsLocalType(t):
-			link = self.filename_provider.type(t)
+			link = self.filename_provider.Filename(t)
 			return link
 		elif t.Namespace == "System" or t.Namespace.startswith("System."):
 			return "http://msdn.microsoft.com/en-us/library/%s%%28v=vs.110%%29.aspx" % t.FullName.lower()
-		else:
-			return None
-
-	def __sysname(self, t):
-		"""Return the alias of a system type, e.g. object instead of System.Object"""
-		builtins = {
-			"System.Boolean" : "bool",
-			"System.Object"  : "object",
-			"System.Int32"   : "int",
-			"System.String"  : "string"
-		}
-
-		if t.FullName in builtins:
-			return builtins[t.FullName]
 		else:
 			return None
 
@@ -242,14 +190,14 @@ class NavigationNode:
 		if not property_element.Documentation.IsLocalType(t):
 			return property_element.Name
 		else:
-			return '<a href="%s">%s</a>' % (self.filename_provider.property(t, property_element), property_element.Name)
+			return '<a href="%s">%s</a>' % (self.filename_provider.Filename(property_element), property_element.Name)
 
 	def method_link(self, method_element):
 		t = method_element.DeclaringType
 		if not method_element.Documentation.IsLocalType(t):
 			return method_element.Name
 		else:
-			return '<a href="%s">%s</a>' % (self.filename_provider.method(t, method_element), method_element.Name)
+			return '<a href="%s">%s</a>' % (self.filename_provider.Filename(method_element), method_element.Name)
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -279,7 +227,7 @@ class NavigationNamespaceNode(NavigationNode):
 		self.namespace_element = namespace_element
 
 	def href(self):
-		return self.filename_provider.namespace(self.namespace_element.Namespace)
+		return self.filename_provider.Filename(self.namespace_element)
 
 	def text(self):
 		return self.namespace_element.Namespace + " Namespace"
@@ -291,7 +239,26 @@ class NavigationNamespaceNode(NavigationNode):
 		print "Generating page for namespace %s" % self.namespace_element.Namespace
 		html_template = HtmlTemplate()
 		html_template.title = self.text()
-		html_template.main  = "Hello, world!"
+		html_template.main  = \
+			HtmlTemplate.fmt_non_empty("""
+				<h2>Classes</h2>
+				<ol>
+					%s
+				</ol>
+				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
+			HtmlTemplate.fmt_non_empty("""
+				<h2>Interfaces</h2>
+				<ol>
+					%s
+				</ol>
+				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
+			HtmlTemplate.fmt_non_empty("""
+				<h2>Enumerations</h2>
+				<ol>
+					%s
+				</ol>
+				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsEnum))
+
 		return html_template
 
 	def documentation(self):
@@ -304,7 +271,7 @@ class NavigationTypeNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.type(self.type_element)
+		return self.filename_provider.Filename(self.type_element)
 
 	def text(self):
 		type_helper = self.type_helper(self.type_element)
@@ -336,7 +303,9 @@ class NavigationTypeNode(NavigationNode):
 			self.interfaces_section() + \
 			self.derived_types_section() + \
 			self.constructors_section(type_helper) + \
-			self.properties_section() + self.methods_section()
+			self.properties_section() + \
+			self.methods_section() + \
+			self.extension_methods_section()
 
 		return html_template
 
@@ -382,7 +351,7 @@ class NavigationTypeNode(NavigationNode):
 			name        = property.Name
 			ptype       = self.type_link(property.PropertyType)
 			description = property.XmlComment.Summary() + " " + self.inherited_from(property)
-			link        = self.filename_provider.property(self.type_element, property)
+			link        = self.filename_provider.Filename(property)
 			return """<tr>
 			<td>%s</td>
 			<td>%s</td>
@@ -437,6 +406,9 @@ class NavigationTypeNode(NavigationNode):
 			"<h2>Methods</h2><ul>%s</ul>",
 			"".join(method_list_item(m) for m in self.type_element.Methods))
 
+	def extension_methods_section(self):
+		return "<h2>Extension methods</h2><p>todo</p>"
+
 	def documentation(self):
 		return self.type_element.Documentation
 
@@ -475,7 +447,7 @@ class NavigationPropertiesNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.properties(self.type_element)
+		return self.filename_provider.Filename(self.type_element, "Properties")
 
 	def text(self):
 		return "Properties"
@@ -501,7 +473,7 @@ class NavigationMethodsNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.methods(self.type_element)
+		return self.filename_provider.Filename(self.type_element, "Methods")
 
 	def text(self):
 		return "Methods"
@@ -527,7 +499,7 @@ class NavigationPropertyNode(NavigationNode):
 		self.property_element = property_element
 
 	def href(self):
-		return self.filename_provider.property(self.property_element.OwnerType, self.property_element)
+		return self.filename_provider.Filename(self.property_element)
 
 	def text(self):
 		return self.property_element.Name
@@ -578,7 +550,7 @@ class NavigationMethodNode(NavigationNode):
 		self.method_element = method_element
 
 	def href(self):
-		return self.filename_provider.method(self.method_element.OwnerType, self.method_element)
+		return self.filename_provider.Filename(self.method_element)
 
 	def text(self):
 		return self.method_element.Name
@@ -653,8 +625,7 @@ def make_visitor(nav, footer):
 
 		html_template.nav    = nav
 		html_template.footer = footer
-		html_template.file   = navigation_node.href()
-		html_template.write_to()
+		html_template.write_to(navigation_node.href())
 
 	return visitor
 

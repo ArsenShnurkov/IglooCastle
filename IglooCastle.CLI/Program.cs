@@ -76,16 +76,7 @@ namespace IglooCastle.CLI
 							}
 					};
 
-				HashSet<string> namespaces = new HashSet<string>();
-				List<TypeElement> types = new List<TypeElement>();
-				foreach (Type type in assembly.GetTypes().Where(t => t.IsVisible))
-				{
-					namespaces.Add(type.Namespace ?? string.Empty);
-					types.Add(new TypeElement(documentation, type));
-				}
-
-				documentation.Namespaces = namespaces.Select(n => new NamespaceElement(documentation, n)).ToArray();
-				documentation.Types = types.ToArray();
+				documentation.Scan(assembly);
 				return documentation;
 			}
 			catch (ReflectionTypeLoadException ex)
