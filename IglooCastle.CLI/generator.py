@@ -143,7 +143,7 @@ class NavigationNode:
 		if len(children_html):
 			return "<li>%s %s<ol>%s</ol></li>" % (self.EXPANDER, node_html, children_html)
 		else:
-			return "<li>%s</li>" % node_html
+			return '<li class="leaf">%s</li>' % node_html
 
 	def contents_html_template(self):
 		return None
@@ -204,17 +204,8 @@ class NavigationNode:
 		else:
 			return a(self.filename_provider.Filename(method_element), method_element.Name)
 
-	def property_type_link(self, dotnet_type):
-		print "property_type_link %s" % dotnet_type.Name
-
-		if dotnet_type.IsArray:
-			return self.property_type_link(dotnet_type.GetElementType()) + "[]"
-
-		documentation = self.documentation()
-		type_printer = IglooCastle.CLI.TypePrinter(documentation, self.filename_provider)
-		result = type_printer.Print(dotnet_type)
-		print "property_type_link is %s" % result
-		return result
+	def type_printer(self):
+		return IglooCastle.CLI.TypePrinter(self.documentation(), self.filename_provider)
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -366,7 +357,7 @@ class NavigationTypeNode(NavigationNode):
 	def properties_section(self):
 		def property_list_item(property):
 			name        = property.Name
-			ptype       = self.property_type_link(property.PropertyType)
+			ptype       = self.type_printer().Print(property.PropertyType)
 			description = property.XmlComment.Summary() + " " + self.inherited_from(property)
 			link        = self.filename_provider.Filename(property)
 			return """<tr>
@@ -405,7 +396,7 @@ class NavigationTypeNode(NavigationNode):
 			if is_extension_method:
 				parameters_string = "this " + parameters_string
 
-			name = self.type_link(method_element.ReturnType) + " " + \
+			name = self.type_printer().Print(method_element.ReturnType) + " " + \
 				method_element.Name + "(" + \
 				parameters_string + \
 				")"
@@ -451,7 +442,7 @@ class NavigationTypeNode(NavigationNode):
 		attributes = parameterInfo.GetCustomAttributes(False)
 
 		return self.format_attributes(attributes) + \
-			self.type_link(parameterInfo.ParameterType) + \
+			self.type_printer().Print(parameterInfo.ParameterType) + \
 			" " + parameterInfo.Name
 
 	def format_parameters(self, something):
@@ -543,7 +534,7 @@ class NavigationPropertyNode(NavigationNode):
 			if getter_attr and not self.property_element.OwnerType.IsInterface: # all interface members are public
 				access = getter_attr.ToString()
 
-			return "%s %s %s { %s %s }" % (access, self.type_link(self.property_element.PropertyType), self.property_element.Name, getter_str, setter_str)
+			return "%s %s %s { %s %s }" % (access, self.type_printer().Print(self.property_element.PropertyType), self.property_element.Name, getter_str, setter_str)
 
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
@@ -600,9 +591,9 @@ class NavigationMethodNode(NavigationNode):
 		if method_attr and not self.method_element.OwnerType.IsInterface: # all interface members are public
 			access = method_attr.ToString()
 
-		parameters = ", ".join( self.type_link(p.ParameterType) + " " + p.Name for p in self.method_element.GetParameters() )
+		parameters = ", ".join( self.type_printer().Print(p.ParameterType) + " " + p.Name for p in self.method_element.GetParameters() )
 
-		syntax = "%s %s %s (%s)" % (access, self.type_link(self.method_element.ReturnType), self.method_element.Name, parameters)
+		syntax = "%s %s %s (%s)" % (access, self.type_printer().Print(self.method_element.ReturnType), self.method_element.Name, parameters)
 
 		return """
 			<h2>Syntax</h2>
@@ -617,7 +608,7 @@ class NavigationMethodNode(NavigationNode):
 		<br />
 		Type: %s
 		%s
-		</li>""" % (parameter.Name, self.type_link(parameter.ParameterType), "todo param doc")
+		</li>""" % (parameter.Name, self.type_printer().Print(parameter.ParameterType), "todo param doc")
 
 	def __parameters_section(self):
 		return HtmlTemplate.fmt_non_empty("""
@@ -631,7 +622,7 @@ class NavigationMethodNode(NavigationNode):
 		return """
 		<h2>Return Value</h2>
 		%s %s
-		""" % (self.type_link(self.method_element.ReturnType), self.method_element.XmlComment.Section("returns"))
+		""" % (self.type_printer().Print(self.method_element.ReturnType), self.method_element.XmlComment.Section("returns"))
 
 def make_visitor(nav, footer):
 	def visitor(navigation_node):

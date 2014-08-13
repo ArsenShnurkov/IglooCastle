@@ -1,59 +1,81 @@
 ﻿body {
-    margin: 0;
-    padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 body, table {
-    font-family: Verdana;
-    font-size: 10pt;
-    text-align: left;
+	font: .875em/1.35 'Segoe UI','Lucida Grande',Verdana,Arial,Helvetica,sans-serif;
+	text-align: left;
 }
 
+/**
+ * Left side navigation
+ */
+
 nav {
-    background: #efefef;
-    padding: 1%;
-    float: left;
-    margin: 0;
-    width: 23%;
-    overflow: scroll;
+	background: #efefef;
+	padding: 1%;
+	float: left;
+	margin: 0;
+	width: 23%;
+	overflow: scroll;
 }
+
+nav ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+nav ol ol {
+	padding: 0 0 0 20px;
+	clear: both;
+}
+
+.js-expander {
+	background: white;
+	border: 1px solid black;
+	cursor: pointer;
+	display: block;
+	float: left;
+	font-family: monospace;
+	height: 10px;
+	line-height: 10px;
+	margin: 2px 4px 0 0;
+	text-align: center;
+	width: 10px;
+}
+
+nav a {
+	display: block;
+	float: left;
+}
+
+nav li {
+	clear: both;
+}
+
+li.selected > a {
+	font-weight: bold;
+}
+
+li.leaf > a {
+
+	margin-left: 16px;
+}
+
+/**
+ * Main area
+ */
 
 section {
 	float: left;
-    width: 73%;
-    padding: 1%;
+	width: 73%;
+	padding: 1%;
 }
 
 footer {
 	clear: both;
-    border-top: 1px solid #ccc;
-    padding-top: 1em;
-}
-
-nav ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-nav ol ol {
-    padding: 0 0 0 20px;
-}
-
-.js-expander {
-    background: white;
-    border: 1px solid black;
-    width: 10px;
-    height: 10px;
-    display: inline-block;
-    text-align: center;
-    vertical-align: middle;
-    line-height: 10px;
-    margin-right: 4px;
-    cursor: pointer;
-    font-family: monospace;
-}
-
-li.selected > a {
-    font-weight: bold;
+	border-top: 1px solid #ccc;
+	padding-top: 1em;
 }

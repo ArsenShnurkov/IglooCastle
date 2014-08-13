@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace IglooCastle.Tests
 {
 	[TestFixture]
-    public class FilenameProviderTest
+	public class FilenameProviderTest
 	{
 		private Documentation _documentation;
 
@@ -67,5 +67,5 @@ namespace IglooCastle.Tests
 			FilenameProvider filenameProvider = new FilenameProvider();
 			Assert.AreEqual(expected, filenameProvider.Filename(targetMethod));
 		}
-    }
+	}
 }

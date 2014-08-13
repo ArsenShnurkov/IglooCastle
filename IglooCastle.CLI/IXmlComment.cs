@@ -2,7 +2,7 @@
 {
 	public interface IXmlComment
 	{
-		string InnertText { get; }
+		string InnerText { get; }
 
 		string Section(string name);
 	}

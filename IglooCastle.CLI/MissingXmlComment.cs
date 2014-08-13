@@ -7,7 +7,7 @@
 			return string.Empty;
 		}
 
-		public string InnertText
+		public string InnerText
 		{
 			get { return string.Empty; }
 		}

@@ -17,7 +17,7 @@ namespace IglooCastle.CLI
 			return node != null ? node.InnerXml : string.Empty;
 		}
 
-		public string InnertText
+		public string InnerText
 		{
 			get { return _documentationNode.InnerText; }
 		}
