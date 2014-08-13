@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="FilenameProviderTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypePrinterTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

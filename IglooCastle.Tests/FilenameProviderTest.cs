@@ -33,7 +33,7 @@ namespace IglooCastle.Tests
 		public void TestMethodWithStringAlias()
 		{
 			// public string Filename(TypeElement type, string prefix)
-			const string expected = "M_IglooCastle.CLI.FilenameProvider.Filename-IglooCastle.CLI.TypeElement_string.html";
+			const string expected = "M_IglooCastle.CLI.FilenameProvider.Filename-IglooCastle.CLI.TypeElement,string.html";
 
 			// locate type
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(FilenameProvider));
@@ -53,7 +53,7 @@ namespace IglooCastle.Tests
 		{
 			// public static ICollection<TypeElement> FilterTypes(this ITypeContainer typeContainer, Predicate<TypeElement> predicate)
 			const string expected =
-				"M_IglooCastle.CLI.TypeContainerExtensions.FilterTypes-IglooCastle.CLI.ITypeContainer-System.Predicate_IglooCastle.CLI.TypeElement.html";
+				"M_IglooCastle.CLI.TypeContainerExtensions.FilterTypes-IglooCastle.CLI.ITypeContainer,System.Predicate`IglooCastle.CLI.TypeElement.html";
 
 			// locate type
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(TypeContainerExtensions));

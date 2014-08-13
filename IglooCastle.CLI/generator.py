@@ -210,24 +210,9 @@ class NavigationNode:
 		if dotnet_type.IsArray:
 			return self.property_type_link(dotnet_type.GetElementType()) + "[]"
 
-		if dotnet_type.IsGenericType and not dotnet_type.IsGenericTypeDefinition:
-			result = self.property_type_link(dotnet_type.GetGenericTypeDefinition())
-			result += "&lt;"
-			for generic_argument in dotnet_type.GetGenericArguments():
-				result += self.property_type_link(generic_argument)
-				result += ", "
-			result += "&gt;"
-
-			return result
-
-
-		type_helper = self.type_helper(dotnet_type)
-		link = type_helper.link()
-		if link:
-			result = a(link, type_helper.short_name())
-		else:
-			result = type_helper.name()
-
+		documentation = self.documentation()
+		type_printer = IglooCastle.CLI.TypePrinter(documentation, self.filename_provider)
+		result = type_printer.Print(dotnet_type)
 		print "property_type_link is %s" % result
 		return result
 
