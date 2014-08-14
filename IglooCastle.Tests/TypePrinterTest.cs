@@ -188,5 +188,12 @@ namespace IglooCastle.Tests
 			const string expected = "object";
 			Assert.AreEqual(expected, _typePrinter.Print(typeof(object).MakeByRefType(), new TypePrinter.PrintOptions { Links = false, ShortName = true }));
 		}
+
+		[Test]
+		public void TestPropertySyntax()
+		{
+			const string expected = "public TMember Member { get; }";
+			Assert.AreEqual(expected, _typePrinter.Syntax(typeof(DocumentationElement<>).GetProperty("Member")));
+		}
 	}
 }

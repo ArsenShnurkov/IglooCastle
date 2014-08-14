@@ -539,24 +539,6 @@ class NavigationPropertyNode(NavigationNode):
 	def contents_html_template(self):
 		property_name = self.property_element.Name
 		type_helper = self.type_helper(self.property_element.OwnerType)
-		def syntax():
-			getter = self.property_element.GetGetMethod(True) if self.property_element.CanRead else None
-			setter = self.property_element.GetSetMethod(True) if self.property_element.CanWrite else None
-			getter_attr = getter.Attributes if getter else None
-			setter_attr = setter.Attributes if setter else None
-
-			getter_str = ""
-			if getter_attr:
-				getter_str = "get;"
-
-			setter_str = setter_attr.ToString() + " set;" if setter_attr else ""
-
-			access = ""
-			if getter_attr and not self.property_element.OwnerType.IsInterface: # all interface members are public
-				access = getter_attr.ToString()
-
-			return "%s %s %s { %s %s }" % (access, self.type_printer().Print(self.property_element.PropertyType), self.property_element.Name, getter_str, setter_str)
-
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
 		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), property_name, "Property")
@@ -569,7 +551,7 @@ class NavigationPropertyNode(NavigationNode):
 				<code>
 				%s
 				</code>
-				""" % syntax()
+				""" % self.type_printer().Syntax(self.property_element)
 		return html_template
 
 

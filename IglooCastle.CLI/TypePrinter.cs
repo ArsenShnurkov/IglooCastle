@@ -212,40 +212,62 @@ namespace IglooCastle.CLI
 			return Syntax(methodElement.Member, printOptions);
 		}
 
-		public string Syntax(MethodInfo method, PrintOptions printOptions = null)
+		private string AccessPrefix(MemberInfo member)
 		{
-			string access;
+			if (member.ReflectedType.IsInterface)
+			{
+				return string.Empty;
+			}
+
+			// TODO: more options + tests
+			return "public";
+		}
+
+		private string Modifiers(MethodInfo method)
+		{
 			if (method.ReflectedType.IsInterface)
 			{
-				access = string.Empty;
+				return string.Empty;
 			}
-			else
+
+			string modifiers = "";
+			if (method.IsStatic)
 			{
-				// TODO: more options + tests
-				access = "public";
-
-				if (method.IsStatic)
-				{
-					access += " static";
-				}
-
-				if (method.IsVirtual)
-				{
-					access += method.IsOverride() ? " override" : " virtual";
-				}
-
-				if (method.IsAbstract)
-				{
-					access += " abstract";
-				}
-
-				access += " ";
+				modifiers += " static";
 			}
 
+			if (method.IsVirtual)
+			{
+				modifiers += method.IsOverride() ? " override" : " virtual";
+			}
+
+			if (method.IsAbstract)
+			{
+				modifiers += " abstract";
+			}
+
+			return modifiers.TrimStart(' ');
+		}
+		
+		public string Syntax(MethodInfo method, PrintOptions printOptions = null)
+		{
+			string access = AccessPrefix(method);
+			string modifiers = Modifiers(method);			
 			string returnType = Print(method.ReturnType, printOptions);
 			bool isExtension = method.IsExtension();
 			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, printOptions)));
-			return access + returnType + " " + method.Name + "(" + args + ")";
+			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
+		}
+
+		private string Join(params string[] args)
+		{
+			string result = "";
+			foreach (string s in args.Where(arg => !string.IsNullOrWhiteSpace(arg)))
+			{
+				result += " " + s;
+			}
+
+			return result.TrimStart(' ');
 		}
 
 		private string FormatParameter(ParameterInfo parameterInfo, bool isExtensionThis, PrintOptions printOptions)
@@ -274,6 +296,22 @@ namespace IglooCastle.CLI
 			result += " ";
 			result += parameterInfo.Name;
 			return result;
+		}
+		
+		public string Syntax(PropertyElement propertyElement, PrintOptions printOptions = null)
+		{
+			return Syntax(propertyElement.Member, printOptions);
+		}
+
+		public string Syntax(PropertyInfo property, PrintOptions printOptions = null)
+		{
+			var getter = property.CanRead ? property.GetGetMethod() : null;
+			var setter = property.CanWrite ? property.GetSetMethod() : null;
+
+			return Join(AccessPrefix(getter), Print(property.PropertyType, printOptions), property.Name, "{", 
+				(getter != null ? "get;" : ""),
+				(setter != null ? "set;" : ""),
+				"}");
 		}
 	}
 }
