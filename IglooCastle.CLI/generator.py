@@ -221,7 +221,9 @@ class NavigationNamespaceNode(NavigationNode):
 		return self.namespace_element.Namespace + " Namespace"
 
 	def children(self):
-		return [ NavigationTypeNode(t) for t in self.namespace_element.Types ]
+		result = [ NavigationTypeNode(t) for t in self.namespace_element.Types ]
+		result.append( NavigationExtensionMethodsNode(self.namespace_element) )
+		return result
 
 	def contents_html_template(self):
 		print "Generating page for namespace %s" % self.namespace_element.Namespace
@@ -371,17 +373,6 @@ class NavigationTypeNode(NavigationNode):
 	def methods_section(self):
 		def method_list_item(method_element):
 			inheritedLink = self.inherited_from(method_element)
-			is_extension_method = self.is_extension_method(method_element)
-			parameters_string = ",".join(self.format_parameter(p) for p in method_element.GetParameters())
-			if is_extension_method:
-				parameters_string = "this " + parameters_string
-
-			name = self.type_printer().Print(method_element.ReturnType) + " " + \
-				method_element.Name + "(" + \
-				parameters_string + \
-				")"
-
-			name = self.format_attributes(method_element.GetCustomAttributes(False)) + name
 			result = """<li>
 				<dl>
 					<dt>%s</dt>
@@ -395,7 +386,7 @@ class NavigationTypeNode(NavigationNode):
 			"".join(method_list_item(m) for m in self.type_element.Methods))
 
 	def extension_methods_section(self):
-		return "<h2>Extension methods</h2><p>todo</p>"
+		return "<h2>Extension methods</h2><p>todo methods that extend this class defined in this documentation</p>"
 
 	def documentation(self):
 		return self.type_element.Documentation
@@ -478,6 +469,47 @@ class NavigationMethodsNode(NavigationNode):
 		html_template.title  = "%s Methods" % type_helper.name()
 		html_template.h1     = "%s Methods" % type_helper.short_name()
 		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + self.method_link(m) + "</li>" for m in self.type_element.Methods)
+		return html_template
+
+
+class NavigationExtensionMethodsNode(NavigationNode):
+	def __init__(self, namespace_element):
+		NavigationNode.__init__(self)
+		self.namespace_element = namespace_element
+
+	def href(self):
+		return self.filename_provider.Filename(self.namespace_element, "ExtensionMethods")
+
+	def text(self):
+		return "Extension Methods"
+
+	def documentation(self):
+		return self.namespace_element.Documentation
+
+	def contents_html_template(self):
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s Extension Methods" % self.namespace_element.Namespace
+
+		# todo: group per target type
+		extension_methods = [ m for m in self.namespace_element.DeclaredMethods if m.IsExtension() ]
+		dct = { }
+		for m in extension_methods:
+			extended_type = m.GetParameters()[0].ParameterType
+			lst = dct.get(extended_type)
+			if lst == None:
+				lst = []
+				dct[extended_type] = lst
+
+			lst.append(m)
+
+		html_template.main = ""
+
+		for t in list(dct):
+			html_template.main += "<h2>%s</h2>" % self.type_printer().Print(t)
+			html_template.main += "<ol>"
+			html_template.main += "".join("<li>" + self.method_link(m) + "</li>" for m in dct[t])
+			html_template.main += "</ol>"
+
 		return html_template
 
 
@@ -566,14 +598,7 @@ class NavigationMethodNode(NavigationNode):
 			""", self.method_element.XmlComment.Summary())
 
 	def __syntax_section(self):
-		method_attr = self.method_element.Attributes
-		access = ""
-		if method_attr and not self.method_element.OwnerType.IsInterface: # all interface members are public
-			access = method_attr.ToString()
-
-		parameters = ", ".join( self.type_printer().Print(p.ParameterType) + " " + p.Name for p in self.method_element.GetParameters() )
-
-		syntax = "%s %s %s (%s)" % (access, self.type_printer().Print(self.method_element.ReturnType), self.method_element.Name, parameters)
+		syntax = self.type_printer().Syntax(self.method_element)
 
 		return """
 			<h2>Syntax</h2>

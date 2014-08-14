@@ -125,5 +125,45 @@ namespace IglooCastle.Tests
 				"&gt;";
 			Assert.AreEqual(expected, _typePrinter.Print(typeof(DocumentationElement<TypePrinter>)));
 		}
+
+		[Test]
+		public void TestMethodSyntax()
+		{
+			const string expected = "public void Scan(Assembly assembly)";
+			var method = typeof(Documentation).GetMethod("Scan");
+			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
+		}
+
+		[Test]
+		public void TestStaticMethodSyntax()
+		{
+			const string expected = "public static string Alias(Type type)";
+			var method = typeof(SystemTypes).GetMethod("Alias", new[] { typeof(Type) });
+			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
+		}
+
+		[Test]
+		public void TestInterfaceMethodSyntax()
+		{
+			const string expected = "string Section(string name)";
+			var method = typeof(IXmlComment).GetMethod("Section");
+			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
+		}
+
+		[Test]
+		public void TestExtensionMethodSyntax()
+		{
+			const string expected = "public static string Summary(this IXmlComment xmlComment)";
+			var method = typeof(XmlCommentExtensions).GetMethod("Summary");
+			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
+		}
+
+		[Test]
+		public void TestPrintExtensionMethod()
+		{
+			const string expected = "Summary(this IXmlComment)";
+			var method = typeof(XmlCommentExtensions).GetMethod("Summary");
+			Assert.AreEqual(expected, _typePrinter.Print(method));
+		}
 	}
 }

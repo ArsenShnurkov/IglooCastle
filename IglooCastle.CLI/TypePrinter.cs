@@ -88,7 +88,7 @@ namespace IglooCastle.CLI
 				return type.FullName.Split('`')[0];
 			}
 
-			return type.FullName ?? ShortName(type);
+			return SystemTypes.Alias(type) ?? type.FullName ?? ShortName(type);
 		}
 
 		private string ShortName(TypeElement typeElement)
@@ -154,7 +154,8 @@ namespace IglooCastle.CLI
 
 		public string Print(MethodInfo methodInfo, PrintOptions printOptions)
 		{
-			return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select(p => Print(p.ParameterType, printOptions))) + ")";
+			bool isExtension = methodInfo.IsExtension();
+			return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + Print(p.ParameterType, printOptions))) + ")";
 		}
 
 		public sealed class PrintOptions
@@ -193,6 +194,37 @@ namespace IglooCastle.CLI
 			}
 
 			return name;
+		}
+
+		public string Syntax(MethodElement methodElement, PrintOptions printOptions = null)
+		{
+			return Syntax(methodElement.Member, printOptions);
+		}
+
+		public string Syntax(MethodInfo method, PrintOptions printOptions = null)
+		{
+			string access;
+			if (method.ReflectedType.IsInterface)
+			{
+				access = string.Empty;
+			}
+			else
+			{
+				// TODO: more options + tests
+				access = "public";
+
+				if (method.IsStatic)
+				{
+					access += " static";
+				}
+
+				access += " ";
+			}
+
+			string returnType = Print(method.ReturnType, printOptions);
+			bool isExtension = method.IsExtension();
+			string args = string.Join(", ", method.GetParameters().Select((p, index) => ((isExtension && index == 0) ? "this " : "") + Print(p.ParameterType, printOptions) + " " + p.Name));
+			return access + returnType + " " + method.Name + "(" + args + ")";
 		}
 	}
 }

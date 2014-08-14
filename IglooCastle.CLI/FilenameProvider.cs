@@ -12,6 +12,11 @@ namespace IglooCastle.CLI
 			return string.Format("N_{0}.html", @namespace.Namespace);
 		}
 
+		public string Filename(NamespaceElement @namespace, string prefix)
+		{
+			return string.Format("{0}_{1}", prefix, Filename(@namespace));
+		}
+
 		public string Filename(TypeElement type)
 		{
 			return Filename(type, "T");

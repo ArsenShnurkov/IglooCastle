@@ -36,5 +36,13 @@ namespace IglooCastle.CLI
 		{
 			get { return Documentation.FilterTypes(t => t.Type.Namespace == Namespace); }
 		}
+
+		public ICollection<MethodElement> DeclaredMethods
+		{
+			get
+			{
+				return Documentation.Types.SelectMany(m => m.DeclaredMethods).ToList();
+			}
+		}
 	}
 }

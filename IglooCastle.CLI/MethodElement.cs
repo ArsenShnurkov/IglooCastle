@@ -14,5 +14,10 @@ namespace IglooCastle.CLI
 		{
 			get { return Member; }
 		}
+
+		public bool IsExtension()
+		{
+			return Member.IsExtension();
+		}
 	}
 }
