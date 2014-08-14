@@ -166,27 +166,6 @@ class NavigationNode:
 	def children_nav_html(self):
 		return "".join(child.nav_html() for child in self.children())
 
-	def type_link(self, type):
-		print "type_link %s" % type.Name
-
-		if type.IsArray:
-			return self.type_link(type.GetElementType()) + "[]"
-
-		if type.IsGenericType and not type.IsGenericTypeDefinition:
-			return self.type_link(type.GetGenericTypeDefinition())
-
-		typeHelper = self.type_helper(type)
-		link = typeHelper.link()
-		if link:
-			# print "test"
-			result = a(link, typeHelper.short_name())
-			# print "test 2"
-		else:
-			result = typeHelper.name()
-
-		print "type_link is %s" % result
-		return result
-
 	def type_helper(self, type):
 		return TypeHelper(self.documentation(), self.filename_provider, type)
 
@@ -254,19 +233,19 @@ class NavigationNamespaceNode(NavigationNode):
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
+				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
 			HtmlTemplate.fmt_non_empty("""
 				<h2>Interfaces</h2>
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
+				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
 			HtmlTemplate.fmt_non_empty("""
 				<h2>Enumerations</h2>
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_link(t) + "</li>" for t in self.namespace_element.Types if t.IsEnum))
+				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsEnum))
 
 		return html_template
 
@@ -284,7 +263,7 @@ class NavigationTypeNode(NavigationNode):
 
 	def text(self):
 		type_helper = self.type_helper(self.type_element)
-		return type_helper.short_name() + " " + type_helper.type_kind()
+		return self.type_printer().Name(self.type_element, IglooCastle.CLI.TypePrinter.NameComponents.GenericArguments) + " " + type_helper.type_kind()
 
 	def children(self):
 		result = []
@@ -332,27 +311,27 @@ class NavigationTypeNode(NavigationNode):
 		if not base_type or base_type.FullName == "System.Object":
 			return ""
 
-		return "<p>Inherits from %s</p>" % self.type_link(base_type)
+		return "<p>Inherits from %s</p>" % self.type_printer().Print(base_type)
 
 	def interfaces_section(self):
 		interfaces = self.type_element.GetInterfaces()
 		if not interfaces:
 			return ""
 
-		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_link(t) for t in interfaces)
+		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_printer().Print(t) for t in interfaces)
 
 	def derived_types_section(self):
 		derived_types = self.type_element.GetDerivedTypes()
 		if not derived_types:
 			return ""
 
-		return "<p>Known derived types: %s</p>" % ", ".join(self.type_link(t) for t in derived_types)
+		return "<p>Known derived types: %s</p>" % ", ".join(self.type_printer().Print(t) for t in derived_types)
 
 	def inherited_from(self, member_element):
 		if member_element.IsDeclaredIn(member_element.OwnerType):
 			inherited_link = ""
 		else:
-			inherited_link = "(inherited from %s)" % self.type_link(member_element.DeclaringType)
+			inherited_link = "(inherited from %s)" % self.type_printer().Print(member_element.DeclaringType)
 		return inherited_link
 
 	def properties_section(self):
@@ -431,7 +410,7 @@ class NavigationTypeNode(NavigationNode):
 			System.Security.SecuritySafeCriticalAttribute))
 
 	def format_attribute(self, attribute):
-		return "[" + self.type_link(attribute.GetType()) + "]"
+		return "[" + self.type_printer().Print(attribute.GetType()) + "]"
 
 	def format_attributes(self, attributes):
 		if not attributes:

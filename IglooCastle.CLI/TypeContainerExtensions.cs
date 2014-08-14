@@ -28,7 +28,7 @@ namespace IglooCastle.CLI
 
 		public static ICollection<TypeElement> FilterTypes(this ITypeContainer typeContainer, Predicate<TypeElement> predicate)
 		{
-			return typeContainer.Types.Where(t => predicate(t)).OrderBy(t => t.Name).ToList();
+			return typeContainer.Types.Where(t => predicate(t)).OrderBy(t => t.Member.FullName).ToList();
 		}
 	}
 }

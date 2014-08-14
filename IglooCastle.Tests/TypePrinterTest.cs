@@ -12,12 +12,14 @@ namespace IglooCastle.Tests
 	public class TypePrinterTest
 	{
 		private Documentation _documentation;
+		private TypePrinter _typePrinter;
 
 		[SetUp]
 		public void SetUp()
 		{
 			_documentation = new Documentation();
 			_documentation.Scan(typeof(FilenameProvider).Assembly);
+			_typePrinter = new TypePrinter(_documentation, new FilenameProvider());
 		}
 
 		[Test]
@@ -31,8 +33,7 @@ namespace IglooCastle.Tests
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(TypeElement));
 			PropertyElement targetProperty = targetTypeElement.Properties.Single(p => p.Name == "Properties");
 
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
-			Assert.AreEqual(expected, typePrinter.Print(targetProperty.Member.PropertyType));
+			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.Member.PropertyType));
 		}
 
 		[Test]
@@ -43,50 +44,86 @@ namespace IglooCastle.Tests
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(IXmlComment));
 			PropertyElement targetProperty = targetTypeElement.Properties.Single(p => p.Name == "InnerText");
 
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
-			Assert.AreEqual(expected, typePrinter.Print(targetProperty.Member.PropertyType));
+			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.Member.PropertyType));
 		}
 
 		[Test]
 		public void TestArray()
 		{
 			const string expected = "<a href=\"T_IglooCastle.CLI.NamespaceElement.html\">NamespaceElement</a>[]";
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
-			Assert.AreEqual(expected, typePrinter.Print(typeof(NamespaceElement[])));
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(NamespaceElement[])));
 		}
 
 		[Test]
 		public void TestSystemType()
 		{
 			const string expected = "<a href=\"http://msdn.microsoft.com/en-us/library/system.type%28v=vs.110%29.aspx\">Type</a>";
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
-			Assert.AreEqual(expected, typePrinter.Print(typeof(Type)));
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(Type)));
 		}
 
 		[Test]
 		public void TestGenericArgument()
 		{
-			const string expected = "T";
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
-			Assert.AreEqual(expected, typePrinter.Print(typeof(DocumentationElement<>).GetProperty("Member").PropertyType));
+			const string expected = "TMember";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(DocumentationElement<>).GetProperty("Member").PropertyType));
 		}
 
 		[Test]
 		public void TestMethodNameWithParameterTypes()
 		{
 			const string expected = "Normalize(Type)";
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
 			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(Type) });
-			Assert.AreEqual(expected, typePrinter.Print(method));
+			Assert.AreEqual(expected, _typePrinter.Print(method));
 		}
 
 		[Test]
 		public void TestMethodNameWithAliasParameter()
 		{
 			const string expected = "Equals(object)";
-			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
 			var method = typeof(Documentation).GetMethod("Equals", new[] { typeof(object) });
-			Assert.AreEqual(expected, typePrinter.Print(method));
+			Assert.AreEqual(expected, _typePrinter.Print(method));
+		}
+
+		[Test]
+		public void TestShortNameOfNestedClass()
+		{
+			const string expected = "TypePrinter.PrintOptions";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(TypePrinter.PrintOptions), new TypePrinter.PrintOptions
+			{
+				Links = false,
+				ShortName = true
+			}));
+		}
+
+		[Test]
+		public void TestShortNameOfNestedClassInLink()
+		{
+			const string expected = "<a href=\"T_IglooCastle.CLI.TypePrinter+PrintOptions.html\">TypePrinter.PrintOptions</a>";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(TypePrinter.PrintOptions)));
+		}
+
+		[Test]
+		public void TestGenericTypeDefinition()
+		{
+			const string expected = "<a href=\"T_IglooCastle.CLI.MethodBaseElement%601.html\">MethodBaseElement</a>&lt;T&gt;";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(MethodBaseElement<>)));
+		}
+
+		[Test]
+		public void TestNameOfGenericType()
+		{
+			Assert.AreEqual("DocumentationElement", _typePrinter.Name(typeof(DocumentationElement<>), TypePrinter.NameComponents.Name));
+			Assert.AreEqual("DocumentationElement&lt;TMember&gt;", _typePrinter.Name(typeof(DocumentationElement<>), TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments));
+			Assert.AreEqual("IglooCastle.CLI.DocumentationElement&lt;TMember&gt;", _typePrinter.Name(typeof(DocumentationElement<>), TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments | TypePrinter.NameComponents.Namespace));
+		}
+
+		[Test]
+		public void TestCompleteGenericType()
+		{
+			const string expected = "<a href=\"T_IglooCastle.CLI.DocumentationElement%601.html\">DocumentationElement</a>&lt;" +
+				"<a href=\"T_IglooCastle.CLI.TypePrinter.html\">TypePrinter</a>" +
+				"&gt;";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(DocumentationElement<TypePrinter>)));
 		}
 	}
 }

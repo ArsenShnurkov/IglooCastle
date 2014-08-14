@@ -16,9 +16,19 @@ namespace IglooCastle.CLI
 			_filenameProvider = filenameProvider;
 		}
 
+		public string Print(TypeElement typeElement)
+		{
+			return Print(typeElement.Member);
+		}
+
 		public string Print(Type type)
 		{
 			return Print(type, null);
+		}
+
+		public string Print(TypeElement typeElement, PrintOptions printOptions)
+		{
+			return Print(typeElement.Member, printOptions);
 		}
 
 		public string Print(Type type, PrintOptions printOptions)
@@ -28,100 +38,103 @@ namespace IglooCastle.CLI
 				return Print(type.GetElementType(), printOptions) + "[]";
 			}
 
-			string result;
-			if (type.IsGenericType && !type.IsGenericTypeDefinition)
+			string result = DoPrint(type, printOptions);
+
+			if (type.IsGenericType)
 			{
-				// concrete generic type
-				Type genericTypeDefinition = type.GetGenericTypeDefinition();
-				result = BeginPrint(genericTypeDefinition, printOptions);
+				result += "&lt;";
 				result += string.Join(", ", type.GetGenericArguments().Select(t => Print(t, printOptions)));
-				result += EndPrint(genericTypeDefinition, printOptions);
-			}
-			else
-			{
-				result = BeginPrint(type, printOptions);
-				result += EndPrint(type, printOptions);
+				result += "&gt;";
 			}
 
 			return result;
 		}
 
-		public virtual string BeginPrint(Type type, PrintOptions printOptions)
+		private string DoPrint(Type type, PrintOptions printOptions)
 		{
 			printOptions = printOptions ?? PrintOptions.Default;
-			if (type.IsGenericTypeDefinition)
+			string link = printOptions.Links ? Link(type) : null;
+			string text = link != null || printOptions.ShortName ? ShortName(type) : FullName(type);
+			if (link != null)
 			{
-				return type.FullName.Split('`')[0] + "&lt;";
+				return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
 			}
-
-			if (_documentation.IsLocalType(type))
+			else
 			{
-				if (printOptions.Links)
-				{
-					return string.Format("<a href=\"{0}\">{1}</a>", _filenameProvider.Filename(type), type.Name);
-				}
-				else
-				{
-					if (printOptions.ShortName)
-					{
-						return type.Name;
-					}
-					else
-					{
-						return type.FullName;
-					}
-				}
+				return text;
 			}
-
-			string alias = SystemTypes.Alias(type);
-			if (alias != null)
-			{
-				if (printOptions.Links)
-				{
-					return string.Format(
-						"<a href=\"http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx\">{1}</a>",
-						type.FullName.ToLowerInvariant(),
-						alias);
-				}
-				else
-				{
-					return alias;
-				}
-			}
-
-			if (type.Namespace == "System" || type.Namespace.StartsWith("System."))
-			{
-				if (printOptions.Links)
-				{
-					return string.Format(
-						"<a href=\"http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx\">{1}</a>",
-						type.FullName.ToLowerInvariant(),
-						type.Name);
-				}
-				else
-				{
-					if (printOptions.ShortName)
-					{
-						return type.Name;
-					}
-					else
-					{
-						return type.FullName;
-					}
-				}
-			}
-
-			return type.FullName ?? type.Name;
 		}
 
-		public virtual string EndPrint(Type type, PrintOptions printOptions)
+		private Type GetContainerType(Type nestedType)
 		{
-			if (type.IsGenericTypeDefinition)
+			if (!nestedType.IsNested)
 			{
-				return "&gt;";
+				throw new ArgumentException("Type " + nestedType + " is not nested.");
 			}
 
-			return string.Empty;
+			if (_documentation.IsLocalType(nestedType))
+			{
+				TypeElement containerType = _documentation.FilterTypes(t => t.Member.GetNestedTypes().Contains(nestedType)).Single();
+				return containerType.Member;
+			}
+
+			throw new NotImplementedException(nestedType.ToString());
+		}
+
+		private string FullName(Type type)
+		{
+			if (type.IsGenericType)
+			{
+				return type.FullName.Split('`')[0];
+			}
+
+			return type.FullName ?? ShortName(type);
+		}
+
+		private string ShortName(TypeElement typeElement)
+		{
+			return ShortName(typeElement.Type);
+		}
+
+		private string ShortName(Type type)
+		{
+			if (type.IsNested && !type.IsGenericParameter)
+			{
+				Type containerType = GetContainerType(type);
+				return ShortName(containerType) + "." + type.Name;
+			}
+
+			if (type.IsGenericType)
+			{
+				return type.Name.Split('`')[0];
+			}
+
+			return SystemTypes.Alias(type) ?? type.Name;
+		}
+
+		private bool IsSystemType(Type type)
+		{
+			return type.Namespace == "System" || type.Namespace.StartsWith("System.");
+		}
+
+		private string Link(Type type)
+		{
+			if (_documentation.IsLocalType(type))
+			{
+				return _filenameProvider.Filename(type);
+			}
+
+			if (IsSystemType(type) && !type.IsGenericType)
+			{
+				return string.Format("http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx", type.FullName.ToLowerInvariant());
+			}
+
+			return null;
+		}
+
+		private string Escape(string link)
+		{
+			return link.Replace("`", "%60");
 		}
 
 		public string Print(MethodElement methodElement)
@@ -141,7 +154,7 @@ namespace IglooCastle.CLI
 
 		public string Print(MethodInfo methodInfo, PrintOptions printOptions)
 		{
-			return methodInfo.Name + "(" + string.Join(",", methodInfo.GetParameters().Select(p => Print(p.ParameterType, printOptions))) + ")";
+			return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select(p => Print(p.ParameterType, printOptions))) + ")";
 		}
 
 		public sealed class PrintOptions
@@ -150,6 +163,36 @@ namespace IglooCastle.CLI
 			public static readonly PrintOptions Default = new PrintOptions { Links = true, ShortName = false };
 			public bool Links { get; set; }
 			public bool ShortName { get; set; }
+		}
+
+		[Flags]
+		public enum NameComponents
+		{
+			Name = 0,
+			GenericArguments = 1,
+			Namespace = 2
+		}
+
+		public string Name(TypeElement typeElement, NameComponents nameComponents)
+		{
+			return Name(typeElement.Member, nameComponents);
+		}
+
+		public string Name(Type type, NameComponents nameComponents)
+		{
+			string name = ShortName(type);
+
+			if (type.IsGenericType && ((nameComponents & NameComponents.GenericArguments) == NameComponents.GenericArguments))
+			{
+				name = name + "&lt;" + string.Join(",", type.GetGenericArguments().Select(t => t.Name)) + "&gt;";
+			}
+
+			if ((nameComponents & NameComponents.Namespace) == NameComponents.Namespace)
+			{
+				name = type.Namespace + "." + name;
+			}
+
+			return name;
 		}
 	}
 }
