@@ -13,14 +13,12 @@ namespace IglooCastle.CLI
 
 		public TypeElement OwnerType { get; private set; }
 
-		public bool IsDeclaredIn(TypeElement typeElement)
+		public bool IsInherited
 		{
-			return Member.DeclaringType == typeElement.Type;
-		}
-
-		public bool IsDeclaredIn(Type type)
-		{
-			return Member.DeclaringType == type;
+			get
+			{
+				return Member.DeclaringType != OwnerType.Type;
+			}
 		}
 	}
 }

@@ -81,7 +81,7 @@ namespace IglooCastle.Tests
 		{
 			const string expected = "Equals(object)";
 			var method = typeof(Documentation).GetMethod("Equals", new[] { typeof(object) });
-			Assert.AreEqual(expected, _typePrinter.Print(method));
+			Assert.AreEqual(expected, _typePrinter.Print(method, new TypePrinter.PrintOptions { HideParametersForNonOverloads = false }));
 		}
 
 		[Test]
@@ -161,9 +161,32 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestPrintExtensionMethod()
 		{
-			const string expected = "Summary(this IXmlComment)";
+			const string expected = "Summary";
 			var method = typeof(XmlCommentExtensions).GetMethod("Summary");
 			Assert.AreEqual(expected, _typePrinter.Print(method));
+		}
+
+		[Test]
+		public void TestPrintEqualsMethod()
+		{
+			const string expected = "Equals";
+			var method = typeof(XmlComment).GetMethod("Equals");
+			Assert.AreEqual(expected, _typePrinter.Print(method));
+		}
+
+		[Test]
+		public void TestOverrideMethodSyntax()
+		{
+			const string expected = "public override bool TryGetMember(GetMemberBinder binder, out object result)";
+			var method = typeof(DocumentationElement<>).GetMethod("TryGetMember");
+			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
+		}
+
+		[Test]
+		public void TestPrintRefType()
+		{
+			const string expected = "object";
+			Assert.AreEqual(expected, _typePrinter.Print(typeof(object).MakeByRefType(), new TypePrinter.PrintOptions { Links = false, ShortName = true }));
 		}
 	}
 }

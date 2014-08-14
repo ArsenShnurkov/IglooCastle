@@ -37,11 +37,6 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		public ICollection<PropertyElement> DeclaredProperties
-		{
-			get { return Properties.Where(p => p.IsDeclaredIn(this)).ToList(); }
-		}
-
 		public ICollection<MethodElement> Methods
 		{
 			get
@@ -52,11 +47,6 @@ namespace IglooCastle.CLI
 						   .Select(m => new MethodElement(Documentation, this, m))
 						   .ToList();
 			}
-		}
-
-		public ICollection<MethodElement> DeclaredMethods
-		{
-			get { return Methods.Where(m => m.IsDeclaredIn(this)).ToList(); }
 		}
 
 		public Type[] GetInterfaces()

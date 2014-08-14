@@ -79,3 +79,21 @@ footer {
 	border-top: 1px solid #ccc;
 	padding-top: 1em;
 }
+
+ol.inherited {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+ol.inherited li {
+	display: block;
+	float: left;
+	min-width: 20%;
+}
+
+ol.inherited:after {
+	content:'';
+	display:table;
+	clear: both;
+}

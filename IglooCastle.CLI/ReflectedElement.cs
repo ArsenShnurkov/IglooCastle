@@ -6,7 +6,7 @@ using System.Reflection;
 namespace IglooCastle.CLI
 {
 	public abstract class ReflectedElement<T> : DocumentationElement<T>
-		where T: MemberInfo
+		where T : MemberInfo
 	{
 		protected ReflectedElement(Documentation documentation, T member)
 			: base(documentation, member)

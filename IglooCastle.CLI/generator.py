@@ -185,7 +185,7 @@ class NavigationNode:
 			return a(self.filename_provider.Filename(method_element), signature)
 
 	def type_printer(self):
-		return IglooCastle.CLI.TypePrinter(self.documentation(), self.filename_provider)
+		return self.documentation().TypePrinter
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -269,11 +269,13 @@ class NavigationTypeNode(NavigationNode):
 
 	def children(self):
 		result = []
-		if len(self.type_element.DeclaredProperties):
-			result.append(NavigationPropertiesNode(self.type_element))
+		n = NavigationPropertiesNode(self.type_element)
+		if len(n.children()):
+			result.append(n)
 
-		if len(self.type_element.DeclaredMethods):
-			result.append(NavigationMethodsNode(self.type_element))
+		n = NavigationMethodsNode(self.type_element)
+		if len(n.children()):
+			result.append(n)
 
 		return result
 
@@ -330,7 +332,7 @@ class NavigationTypeNode(NavigationNode):
 		return "<p>Known derived types: %s</p>" % ", ".join(self.type_printer().Print(t) for t in derived_types)
 
 	def inherited_from(self, member_element):
-		if member_element.IsDeclaredIn(member_element.OwnerType):
+		if not member_element.IsInherited:
 			inherited_link = ""
 		else:
 			inherited_link = "(inherited from %s)" % self.type_printer().Print(member_element.DeclaringType)
@@ -364,12 +366,6 @@ class NavigationTypeNode(NavigationNode):
 			</table>""",
 			"".join(property_list_item(p) for p in self.type_element.Properties))
 
-	def is_extension_method(self, method):
-		attributes = [x
-			for x in method.GetCustomAttributes(False)
-			if isinstance(x, System.Runtime.CompilerServices.ExtensionAttribute)]
-		return len(attributes) > 0
-
 	def methods_section(self):
 		def method_list_item(method_element):
 			inheritedLink = self.inherited_from(method_element)
@@ -381,9 +377,22 @@ class NavigationTypeNode(NavigationNode):
 			</li>""" % (self.method_link(method_element), method_element.XmlComment.Summary(), inheritedLink)
 
 			return result
+
+		# TODO: non-inherited first, then inherited in a more compact layout.
+
+		declared_methods  = [ m for m in self.type_element.Methods if not m.IsInherited ]
+		inherited_methods = [ m for m in self.type_element.Methods if m.IsInherited ]
+
+		declared_methods_html = HtmlTemplate.fmt_non_empty(
+			"<h3>Declared in this type</h3><ol>%s</ol>",
+			"".join(method_list_item(m) for m in declared_methods))
+
+		inherited_methods_html = HtmlTemplate.fmt_non_empty(
+			'<h3>Inherited</h3><ol class="inherited">%s</ol>',
+			"".join("<li> " + self.method_link(m) + "</li>" for m in inherited_methods))
+
 		return HtmlTemplate.fmt_non_empty(
-			"<h2>Methods</h2><ul>%s</ul>",
-			"".join(method_list_item(m) for m in self.type_element.Methods))
+			"<h2>Methods</h2>%s", declared_methods_html + inherited_methods_html)
 
 	def extension_methods_section(self):
 		return "<h2>Extension methods</h2><p>todo methods that extend this class defined in this documentation</p>"
@@ -432,7 +441,7 @@ class NavigationPropertiesNode(NavigationNode):
 		return "Properties"
 
 	def children(self):
-		return [ NavigationPropertyNode(p) for p in self.type_element.DeclaredProperties ]
+		return [ NavigationPropertyNode(p) for p in self.type_element.Properties if not p.IsInherited ]
 
 	def documentation(self):
 		return self.type_element.Documentation
@@ -458,7 +467,7 @@ class NavigationMethodsNode(NavigationNode):
 		return "Methods"
 
 	def children(self):
-		return [ NavigationMethodNode(m) for m in self.type_element.DeclaredMethods ]
+		return [ NavigationMethodNode(m) for m in self.type_element.Methods if not m.IsInherited ]
 
 	def documentation(self):
 		return self.type_element.Documentation
@@ -491,7 +500,7 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		html_template.title  = "%s Extension Methods" % self.namespace_element.Namespace
 
 		# todo: group per target type
-		extension_methods = [ m for m in self.namespace_element.DeclaredMethods if m.IsExtension() ]
+		extension_methods = [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
 		dct = { }
 		for m in extension_methods:
 			extended_type = m.GetParameters()[0].ParameterType

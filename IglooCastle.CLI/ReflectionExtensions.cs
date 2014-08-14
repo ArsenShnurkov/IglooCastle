@@ -23,5 +23,23 @@ namespace IglooCastle.CLI
 			bool isExtension = method.GetCustomAttribute<ExtensionAttribute>() != null;
 			return isExtension;
 		}
+
+		public static bool IsOverload(this MethodInfo method)
+		{
+			return method.ReflectedType.GetMethods().Count(m => m.IsPublic && m.Name == method.Name) >= 2;
+		}
+
+		public static bool IsOverride(this MethodInfo method)
+		{
+			for (Type t = method.DeclaringType.BaseType; t != null; t = t.BaseType)
+			{
+				if (t.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray()) != null)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 	}
 }

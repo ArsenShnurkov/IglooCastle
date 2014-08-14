@@ -38,6 +38,11 @@ namespace IglooCastle.CLI
 				return Print(type.GetElementType(), printOptions) + "[]";
 			}
 
+			if (type.IsByRef)
+			{
+				return Print(type.GetElementType(), printOptions);
+			}
+
 			string result = DoPrint(type, printOptions);
 
 			if (type.IsGenericType)
@@ -154,16 +159,22 @@ namespace IglooCastle.CLI
 
 		public string Print(MethodInfo methodInfo, PrintOptions printOptions)
 		{
-			bool isExtension = methodInfo.IsExtension();
-			return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + Print(p.ParameterType, printOptions))) + ")";
+			if (methodInfo.IsOverload() || !printOptions.HideParametersForNonOverloads)
+			{
+				bool isExtension = methodInfo.IsExtension();
+				return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + Print(p.ParameterType, printOptions))) + ")";
+			}
+
+			return methodInfo.Name;
 		}
 
 		public sealed class PrintOptions
 		{
-			public static readonly PrintOptions MethodOverload = new PrintOptions { Links = false, ShortName = true };
+			public static readonly PrintOptions MethodOverload = new PrintOptions { Links = false, ShortName = true, HideParametersForNonOverloads = true };
 			public static readonly PrintOptions Default = new PrintOptions { Links = true, ShortName = false };
 			public bool Links { get; set; }
 			public bool ShortName { get; set; }
+			public bool HideParametersForNonOverloads { get; set; }
 		}
 
 		[Flags]
@@ -218,13 +229,51 @@ namespace IglooCastle.CLI
 					access += " static";
 				}
 
+				if (method.IsVirtual)
+				{
+					access += method.IsOverride() ? " override" : " virtual";
+				}
+
+				if (method.IsAbstract)
+				{
+					access += " abstract";
+				}
+
 				access += " ";
 			}
 
 			string returnType = Print(method.ReturnType, printOptions);
 			bool isExtension = method.IsExtension();
-			string args = string.Join(", ", method.GetParameters().Select((p, index) => ((isExtension && index == 0) ? "this " : "") + Print(p.ParameterType, printOptions) + " " + p.Name));
+			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, printOptions)));
 			return access + returnType + " " + method.Name + "(" + args + ")";
+		}
+
+		private string FormatParameter(ParameterInfo parameterInfo, bool isExtensionThis, PrintOptions printOptions)
+		{
+			string result = "";
+			Type type = parameterInfo.ParameterType;
+			if (type.IsByRef)
+			{
+				type = type.GetElementType();
+				if (parameterInfo.IsOut)
+				{
+					result += "out ";
+				}
+				else
+				{
+					result += "ref ";
+				}
+			}
+
+			if (isExtensionThis)
+			{
+				result += "this ";
+			}
+
+			result += Print(type, printOptions);
+			result += " ";
+			result += parameterInfo.Name;
+			return result;
 		}
 	}
 }

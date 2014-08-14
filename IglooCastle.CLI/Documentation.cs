@@ -13,6 +13,15 @@ namespace IglooCastle.CLI
 		private TypeElement[] _types = new TypeElement[0];
 		private XmlDocument[] _documentationSources = new XmlDocument[0];
 
+		public Documentation()
+		{
+			FilenameProvider = new FilenameProvider();
+			TypePrinter = new TypePrinter(this, FilenameProvider);
+		}
+
+		public FilenameProvider FilenameProvider { get; set; }
+		public TypePrinter TypePrinter { get; set; }
+
 		public NamespaceElement[] Namespaces
 		{
 			get { return _namespaces; }
