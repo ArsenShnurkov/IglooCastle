@@ -199,10 +199,11 @@ class NavigationNode:
 
 	def method_link(self, method_element):
 		t = method_element.DeclaringType
+		signature = self.type_printer().Print(method_element)
 		if not method_element.Documentation.IsLocalType(t):
-			return method_element.Name
+			return signature
 		else:
-			return a(self.filename_provider.Filename(method_element), method_element.Name)
+			return a(self.filename_provider.Filename(method_element), signature)
 
 	def type_printer(self):
 		return IglooCastle.CLI.TypePrinter(self.documentation(), self.filename_provider)
@@ -561,7 +562,7 @@ class NavigationMethodNode(NavigationNode):
 		return self.filename_provider.Filename(self.method_element)
 
 	def text(self):
-		return self.method_element.Name
+		return self.type_printer().Print(self.method_element)
 
 	def documentation(self):
 		return self.method_element.Documentation

@@ -70,5 +70,14 @@ namespace IglooCastle.Tests
 			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
 			Assert.AreEqual(expected, typePrinter.Print(typeof(DocumentationElement<>).GetProperty("Member").PropertyType));
 		}
+
+		[Test]
+		public void TestMethodNameWithParameterTypes()
+		{
+			const string expected = "Normalize(Type)";
+			TypePrinter typePrinter = new TypePrinter(_documentation, new FilenameProvider());
+			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(Type) });
+			Assert.AreEqual(expected, typePrinter.Print(method));
+		}
 	}
 }

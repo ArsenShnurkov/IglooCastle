@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
@@ -82,6 +81,16 @@ namespace IglooCastle.CLI
 			}
 
 			return string.Empty;
+		}
+
+		public string Print(MethodElement methodElement)
+		{
+			return Print(methodElement.Member);
+		}
+
+		public string Print(MethodInfo methodInfo)
+		{
+			return methodInfo.Name + "(" + string.Join(",", methodInfo.GetParameters().Select(p => p.ParameterType.Name)) + ")";
 		}
 	}
 }
