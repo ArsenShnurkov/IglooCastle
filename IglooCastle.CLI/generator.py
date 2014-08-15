@@ -602,7 +602,7 @@ class NavigationMethodNode(NavigationNode):
 		<br />
 		Type: %s
 		%s
-		</li>""" % (parameter.Name, self.type_printer().Print(parameter.ParameterType), "todo param doc")
+		</li>""" % (parameter.Name, self.type_printer().Print(parameter.ParameterType), self.method_element.XmlComment.Param(parameter.Name))
 
 	def __parameters_section(self):
 		return HtmlTemplate.fmt_non_empty("""

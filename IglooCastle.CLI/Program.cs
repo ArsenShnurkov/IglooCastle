@@ -68,15 +68,13 @@ namespace IglooCastle.CLI
 				string fullPath = Path.GetFullPath(file);
 				_possibleAssemblyPaths.Add(Path.GetDirectoryName(fullPath));
 				Assembly assembly = Assembly.LoadFrom(fullPath);
-				Documentation documentation = new Documentation
-					{
-						DocumentationSources = new[]
-							{
-								FindMatchingDocumentation(fullPath)
-							}
-					};
-
+				Documentation documentation = new Documentation();
 				documentation.Scan(assembly);
+				if (!documentation.AddDocumentationFromAssemblyFile(assembly, fullPath))
+				{
+					Console.WriteLine("Could not find matching xml file for assembly {0}", fullPath);
+				}
+
 				return documentation;
 			}
 			catch (ReflectionTypeLoadException ex)
@@ -89,20 +87,6 @@ namespace IglooCastle.CLI
 
 				throw;
 			}
-		}
-
-		private XmlDocument FindMatchingDocumentation(string file)
-		{
-			string xmlFile = Path.ChangeExtension(file, "xml");
-			if (!File.Exists(xmlFile))
-			{
-				Console.WriteLine("Could not find matching xml file {0}", xmlFile);
-				return null;
-			}
-
-			XmlDocument doc = new XmlDocument();
-			doc.Load(xmlFile);
-			return doc;
 		}
 	}
 }

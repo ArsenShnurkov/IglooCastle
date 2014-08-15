@@ -6,5 +6,10 @@
 		{
 			return xmlComment.Section("summary");
 		}
+
+		public static string Param(this IXmlComment xmlComment, string paramName)
+		{
+			return xmlComment.Section("param", "name", paramName);
+		}
 	}
 }

@@ -4,6 +4,8 @@
 	{
 		string InnerText { get; }
 
-		string Section(string name);
+		string Section(string sectionName);
+
+		string Section(string sectionName, string attributeName, string attributeValue);
 	}
 }

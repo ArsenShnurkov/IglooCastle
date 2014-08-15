@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -11,7 +12,7 @@ namespace IglooCastle.CLI
 	{
 		private NamespaceElement[] _namespaces = new NamespaceElement[0];
 		private TypeElement[] _types = new TypeElement[0];
-		private XmlDocument[] _documentationSources = new XmlDocument[0];
+		private readonly List<XmlDocument> _documentationSources = new List<XmlDocument>();
 
 		public Documentation()
 		{
@@ -34,10 +35,18 @@ namespace IglooCastle.CLI
 			set { _types = value != null ? value.ToArray() : new TypeElement[0]; }
 		}
 
-		public XmlDocument[] DocumentationSources
+		public ICollection<XmlDocument> DocumentationSources
 		{
-			get { return _documentationSources; }
-			set { _documentationSources = value ?? new XmlDocument[0]; }
+			get
+			{
+				return _documentationSources;
+			}
+
+			private set 
+			{
+				_documentationSources.Clear();
+				_documentationSources.AddRange(value ?? Enumerable.Empty<XmlDocument>());
+			}
 		}
 
 		public Documentation Merge(Documentation that)
@@ -62,6 +71,9 @@ namespace IglooCastle.CLI
 
 			Namespaces = namespaces.Select(n => new NamespaceElement(this, n)).ToArray();
 			Types = types.ToArray();
+
+			Console.WriteLine(Environment.CurrentDirectory);
+			Console.WriteLine(assembly.Location);
 		}
 
 		public bool IsLocalType(TypeElement type)
@@ -177,6 +189,31 @@ namespace IglooCastle.CLI
 			}
 
 			return new XmlComment((XmlElement)node);
+		}
+
+		public bool AddDocumentation(Assembly assembly)
+		{
+			return AddDocumentationFromAssemblyFile(assembly, assembly.Location);
+		}
+
+		public bool AddDocumentationFromAssemblyFile(Assembly assembly, string assemblyFile)
+		{
+			return AddDocumentationFromXmlFile(assembly, Path.ChangeExtension(assemblyFile, "xml"))
+				|| AddDocumentationFromXmlFile(assembly, Path.ChangeExtension(assemblyFile, "XML"));
+		}
+
+		private bool AddDocumentationFromXmlFile(Assembly assembly, string xmlFile)
+		{
+			if (!File.Exists(xmlFile))
+			{
+				Console.WriteLine("Could not find xml file {0}", xmlFile);
+				return false;
+			}
+
+			XmlDocument doc = new XmlDocument();
+			doc.Load(xmlFile);
+			DocumentationSources.Add(doc);
+			return true;
 		}
 	}
 }

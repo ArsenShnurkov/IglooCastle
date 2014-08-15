@@ -11,5 +11,10 @@
 		{
 			get { return string.Empty; }
 		}
+
+		public string Section(string sectionName, string attributeName, string attributeValue)
+		{
+			return string.Empty;
+		}
 	}
 }

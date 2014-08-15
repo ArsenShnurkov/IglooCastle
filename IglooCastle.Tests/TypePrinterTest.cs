@@ -19,7 +19,7 @@ namespace IglooCastle.Tests
 		{
 			_documentation = new Documentation();
 			_documentation.Scan(typeof(FilenameProvider).Assembly);
-			_typePrinter = new TypePrinter(_documentation, new FilenameProvider());
+			_typePrinter = _documentation.TypePrinter;
 		}
 
 		[Test]
