@@ -49,7 +49,17 @@ namespace IglooCastle.Tests
 			Assert.IsNotInstanceOf(typeof(MissingXmlComment), xmlComment);
 			Assert.AreEqual("Checks if this method is an extension method.", xmlComment.Summary());
 			Assert.AreEqual("This method.", xmlComment.Param("method"));
-			Assert.AreEqual("<c>true</c> if this is an extension method, <c>false</c> otherwise.", xmlComment.Section("returns"));
+			Assert.AreEqual("<code>true</code> if this is an extension method, <code>false</code> otherwise.", xmlComment.Returns());
+		}
+
+		[Test]
+		public void TestReturns()
+		{
+			MethodInfo method = typeof(ReflectedElement<>).GetMethod("GetCustomAttributes");
+			var xmlComment = _documentation.Find(method).XmlComment;
+			Assert.AreEqual(
+				"A collection of <a href=\"http://msdn.microsoft.com/en-us/library/system.attribute%28v=vs.110%29.aspx\">Attribute</a>",
+				xmlComment.Returns());
 		}
 	}
 }

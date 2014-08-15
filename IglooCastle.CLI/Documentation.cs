@@ -8,19 +8,35 @@ using System.Xml;
 
 namespace IglooCastle.CLI
 {
+	/// <summary>
+	/// Represents the documentation of one or more assemblies.
+	/// </summary>
 	public class Documentation : ITypeContainer
 	{
 		private NamespaceElement[] _namespaces = new NamespaceElement[0];
 		private TypeElement[] _types = new TypeElement[0];
 		private readonly List<XmlDocument> _documentationSources = new List<XmlDocument>();
 
+		/// <summary>
+		/// Creates an instance of this class.
+		/// </summary>
+		/// <remarks>
+		/// The <see cref="FilenameProvider"/> and <see cref="TypePrinter"/> are set to default values.
+		/// </remarks>
 		public Documentation()
 		{
 			FilenameProvider = new FilenameProvider();
 			TypePrinter = new TypePrinter(this, FilenameProvider);
 		}
 
+		/// <summary>
+		/// Gets or sets the filename provider.
+		/// </summary>
 		public FilenameProvider FilenameProvider { get; set; }
+
+		/// <summary>
+		/// Gets or sets the type printer.
+		/// </summary>
 		public TypePrinter TypePrinter { get; set; }
 
 		public NamespaceElement[] Namespaces
@@ -175,7 +191,7 @@ namespace IglooCastle.CLI
 			return DocumentationSources.Select(xmlDoc => GetXmlComment(xmlDoc, selector)).FirstOrDefault(c => c != null);
 		}
 
-		private static XmlComment GetXmlComment(XmlDocument doc, string selector)
+		private XmlComment GetXmlComment(XmlDocument doc, string selector)
 		{
 			if (doc == null)
 			{
@@ -188,7 +204,7 @@ namespace IglooCastle.CLI
 				return null;
 			}
 
-			return new XmlComment((XmlElement)node);
+			return new XmlComment(this, (XmlElement)node);
 		}
 
 		public bool AddDocumentation(Assembly assembly)
@@ -214,6 +230,11 @@ namespace IglooCastle.CLI
 			doc.Load(xmlFile);
 			DocumentationSources.Add(doc);
 			return true;
+		}
+
+		public MethodElement Find(MethodInfo method)
+		{
+			return Types.SelectMany(m => m.Methods).Single(m => m.Member == method);
 		}
 	}
 }

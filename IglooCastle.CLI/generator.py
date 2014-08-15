@@ -249,6 +249,8 @@ class NavigationNamespaceNode(NavigationNode):
 				</ol>
 				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsEnum))
 
+		# TODO: delegates
+
 		return html_template
 
 	def documentation(self):
@@ -269,6 +271,9 @@ class NavigationTypeNode(NavigationNode):
 
 	def children(self):
 		result = []
+
+		# TODO: constructors node
+
 		n = NavigationPropertiesNode(self.type_element)
 		if len(n.children()):
 			result.append(n)
@@ -276,6 +281,8 @@ class NavigationTypeNode(NavigationNode):
 		n = NavigationMethodsNode(self.type_element)
 		if len(n.children()):
 			result.append(n)
+
+		# TODO: events node
 
 		return result
 
@@ -298,6 +305,8 @@ class NavigationTypeNode(NavigationNode):
 			self.properties_section() + \
 			self.methods_section() + \
 			self.extension_methods_section()
+
+		# TODO: operators
 
 		return html_template
 
