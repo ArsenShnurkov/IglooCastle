@@ -145,8 +145,8 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestInterfaceMethodSyntax()
 		{
-			const string expected = "string Section(string name)";
-			var method = typeof(IXmlComment).GetMethod("Section");
+			const string expected = "string Section(string sectionName)";
+			var method = typeof(IXmlComment).GetMethod("Section", new[] { typeof(string) });
 			Assert.AreEqual(expected, _typePrinter.Syntax(method, new TypePrinter.PrintOptions { Links = false, ShortName = true }));
 		}
 
@@ -194,6 +194,13 @@ namespace IglooCastle.Tests
 		{
 			const string expected = "public TMember Member { get; }";
 			Assert.AreEqual(expected, _typePrinter.Syntax(typeof(DocumentationElement<>).GetProperty("Member")));
+		}
+
+		[Test]
+		public void TestPrintNamespaceElement()
+		{
+			const string expected = "<a href=\"N_IglooCastle.CLI.html\">IglooCastle.CLI</a>";
+			Assert.AreEqual(expected, _typePrinter.Print(_documentation.Namespaces.First()));
 		}
 	}
 }

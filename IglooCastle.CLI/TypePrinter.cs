@@ -313,5 +313,21 @@ namespace IglooCastle.CLI
 				(setter != null ? "set;" : ""),
 				"}");
 		}
+
+		public string Print(NamespaceElement namespaceElement, PrintOptions printOptions = null)
+		{
+			printOptions = printOptions ?? PrintOptions.Default;
+			if (printOptions.Links)
+			{
+				return string.Format(
+					"<a href=\"{0}\">{1}</a>",
+					_filenameProvider.Filename(namespaceElement),
+					namespaceElement.Namespace);
+			}
+			else
+			{
+				return namespaceElement.Namespace;
+			}
+		}
 	}
 }

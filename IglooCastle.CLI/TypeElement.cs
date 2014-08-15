@@ -11,6 +11,11 @@ namespace IglooCastle.CLI
 		{
 		}
 
+		public override NamespaceElement NamespaceElement
+		{
+			get { return Documentation.Namespaces.Single(n => n.Namespace == Member.Namespace); }
+		}
+
 		internal Type Type
 		{
 			get { return Member; }

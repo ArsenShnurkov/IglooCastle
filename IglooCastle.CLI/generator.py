@@ -575,26 +575,36 @@ class NavigationMethodNode(NavigationNode):
 		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), method_name, "Method")
 		html_template.main   = self.__summary_section() + \
 			self.__syntax_section() + \
-			self.__parameters_section() + \
-			self.__return_value()
+			self.__exceptions_section() + \
+			self.__remarks_section() + \
+			self.__see_also_section()
 
 		return html_template
 
 	def __summary_section(self):
-		return HtmlTemplate.fmt_non_empty("""
-			<h2>Summary</h2>
+		return """
 			<p>%s</p>
-			""", self.method_element.XmlComment.Summary())
+			<dl>
+				<dt>Namespace</dt>
+				<dd>%s</dd>
+				<dt>Assembly</dt>
+				<dd>%s</dd>
+			</dl>
+			""" % (self.method_element.XmlComment.Summary(), self.type_printer().Print(self.method_element.NamespaceElement), self.method_element.OwnerType.Assembly.ToString())
 
 	def __syntax_section(self):
 		syntax = self.type_printer().Syntax(self.method_element)
 
-		return """
+		result = """
 			<h2>Syntax</h2>
 			<code>
 			%s
 			</code>
 			""" % syntax
+
+		result += self.__parameters_section()
+		result += self.__return_value()
+		return result
 
 	def __parameter(self, parameter):
 		return """<li>
@@ -606,7 +616,7 @@ class NavigationMethodNode(NavigationNode):
 
 	def __parameters_section(self):
 		return HtmlTemplate.fmt_non_empty("""
-			<h2>Parameters</h2>
+			<h3>Parameters</h3>
 			<ol>
 			%s
 			</ol>
@@ -614,11 +624,24 @@ class NavigationMethodNode(NavigationNode):
 
 	def __return_value(self):
 		return """
-		<h2>Return Value</h2>
-		%s %s
+		<h3>Return Value</h3>
+		<p>Type: %s</p>
+		<p>%s</p>
 		""" % (self.type_printer().Print(self.method_element.ReturnType), self.method_element.XmlComment.Section("returns"))
 
+	def __exceptions_section(self):
+		return ""
+
+	def __remarks_section(self):
+		return ""
+
+	def __see_also_section(self):
+		return ""
+
+
 def make_visitor(nav, footer):
+	"""Makes the visitor function that processes each navigation node."""
+
 	def visitor(navigation_node):
 		print "visting %s" % navigation_node
 		html_template = navigation_node.contents_html_template()

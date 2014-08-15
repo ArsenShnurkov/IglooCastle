@@ -18,6 +18,11 @@ namespace IglooCastle.CLI
 			get { return Member.Name; }
 		}
 
+		public abstract NamespaceElement NamespaceElement
+		{
+			get;
+		}
+
 		public override IXmlComment XmlComment
 		{
 			get { return Documentation.GetXmlComment(this) ?? new MissingXmlComment(); }
