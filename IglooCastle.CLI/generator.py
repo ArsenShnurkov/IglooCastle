@@ -378,8 +378,6 @@ class NavigationTypeNode(NavigationNode):
 
 			return result
 
-		# TODO: non-inherited first, then inherited in a more compact layout.
-
 		declared_methods  = [ m for m in self.type_element.Methods if not m.IsInherited ]
 		inherited_methods = [ m for m in self.type_element.Methods if m.IsInherited ]
 
