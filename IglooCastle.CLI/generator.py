@@ -68,69 +68,6 @@ class HtmlTemplate:
 			return ""
 
 
-class TypeHelper:
-	def __init__(self, documentation, filename_provider, type):
-		self.documentation     = documentation
-		self.filename_provider = filename_provider
-		self.type              = type
-
-	def name(self):
-		if self.type.IsGenericParameter:
-			# e.g. T when found inside SomeType<T>
-			return self.type.Name
-
-		t = self.documentation.Normalize(self.type)
-
-		if t.IsGenericType:
-			return t.FullName.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
-		else:
-			return IglooCastle.CLI.SystemTypes.Alias(t) or t.FullName
-
-	def short_name(self):
-		if self.type.IsGenericParameter:
-			# e.g. T when found inside SomeType<T>
-			return self.type.Name
-
-		t = self.documentation.Normalize(self.type)
-
-		if t.IsGenericType:
-			return t.Name.Split('`')[0] + "&lt;" + ", ".join(subType.Name for subType in t.GetGenericArguments()) + "&gt;"
-		else:
-			return IglooCastle.CLI.SystemTypes.Alias(t) or t.Name
-
-	def type_kind(self):
-		type_kind = ""
-		if self.type.IsEnum:
-			type_kind = "Enumeration"
-		elif self.type.IsValueType:
-			type_kind = "Struct"
-		elif self.type.IsInterface:
-			type_kind = "Interface"
-		elif self.type.IsClass:
-			type_kind = "Class"
-		else:
-			# what else?
-			type_kind = "Type"
-
-		return type_kind
-
-	def link(self):
-		t = self.type
-		if t.IsArray:
-			raise ValueError("Can not link to an array")
-
-		if t.IsGenericType and not t.IsGenericTypeDefinition:
-			raise ValueError("Can not link to closed generic types")
-
-		if self.documentation.IsLocalType(t):
-			link = self.filename_provider.Filename(t)
-			return link
-		elif t.Namespace == "System" or t.Namespace.startswith("System."):
-			return "http://msdn.microsoft.com/en-us/library/%s%%28v=vs.110%%29.aspx" % t.FullName.lower()
-		else:
-			return None
-
-
 class NavigationNode:
 	def __init__(self):
 		self.filename_provider = FilenameProvider()
@@ -165,9 +102,6 @@ class NavigationNode:
 
 	def children_nav_html(self):
 		return "".join(child.nav_html() for child in self.children())
-
-	def type_helper(self, type):
-		return TypeHelper(self.documentation(), self.filename_provider, type)
 
 	def property_link(self, property_element):
 		t = property_element.DeclaringType
@@ -266,8 +200,7 @@ class NavigationTypeNode(NavigationNode):
 		return self.filename_provider.Filename(self.type_element)
 
 	def text(self):
-		type_helper = self.type_helper(self.type_element)
-		return self.type_printer().Name(self.type_element, IglooCastle.CLI.TypePrinter.NameComponents.GenericArguments) + " " + type_helper.type_kind()
+		return self.type_element.ShortName + " " + self.type_element.TypeKind
 
 	def children(self):
 		result = []
@@ -288,20 +221,17 @@ class NavigationTypeNode(NavigationNode):
 
 	def contents_html_template(self):
 		print "Generating page for type %s" % self.type_element.FullName
-		type_helper = self.type_helper(self.type_element)
-		fullName = type_helper.name()
-		type_kind = type_helper.type_kind()
-
+		type_kind            = self.type_element.TypeKind
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s %s" % (fullName, type_kind)
-		html_template.h1     = "%s %s" % (type_helper.short_name(), type_kind)
+		html_template.title  = "%s %s" % (self.type_element.FullName, type_kind)
+		html_template.h1     = "%s %s" % (self.type_element.ShortName, type_kind)
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
 			self.base_type_section() + \
 			self.interfaces_section() + \
 			self.derived_types_section() + \
-			self.constructors_section(type_helper) + \
+			self.constructors_section() + \
 			self.properties_section() + \
 			self.methods_section() + \
 			self.extension_methods_section()
@@ -310,10 +240,10 @@ class NavigationTypeNode(NavigationNode):
 
 		return html_template
 
-	def constructors_section(self, type_helper):
+	def constructors_section(self):
 
 		def constructor_list_item(constructor):
-			return "<li>%s(%s)</li>" % ( type_helper.short_name(), self.format_parameters(constructor) )
+			return "<li>%s(%s)</li>" % ( self.type_element.ShortName, self.format_parameters(constructor) )
 
 		return HtmlTemplate.fmt_non_empty(
 			"<h2>Constructors</h2><ul>%s</ul>",
@@ -454,10 +384,9 @@ class NavigationPropertiesNode(NavigationNode):
 		return self.type_element.Documentation
 
 	def contents_html_template(self):
-		type_helper = self.type_helper(self.type_element)
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s Properties" % type_helper.name()
-		html_template.h1     = "%s Properties" % type_helper.short_name()
+		html_template.title  = "%s Properties" % self.type_element.FullName
+		html_template.h1     = "%s Properties" % self.type_element.ShortName
 		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + self.property_link(p) + "</li>" for p in self.type_element.Properties)
 		return html_template
 
@@ -480,10 +409,9 @@ class NavigationMethodsNode(NavigationNode):
 		return self.type_element.Documentation
 
 	def contents_html_template(self):
-		type_helper = self.type_helper(self.type_element)
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s Methods" % type_helper.name()
-		html_template.h1     = "%s Methods" % type_helper.short_name()
+		html_template.title  = "%s Methods" % self.type_element.FullName
+		html_template.h1     = "%s Methods" % self.type_element.ShortName
 		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + self.method_link(m) + "</li>" for m in self.type_element.Methods)
 		return html_template
 
@@ -545,10 +473,9 @@ class NavigationPropertyNode(NavigationNode):
 
 	def contents_html_template(self):
 		property_name = self.property_element.Name
-		type_helper = self.type_helper(self.property_element.OwnerType)
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
-		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), property_name, "Property")
+		html_template.h1     = "%s.%s %s" % (self.property_element.OwnerType.ShortName, property_name, "Property")
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>
@@ -578,10 +505,9 @@ class NavigationMethodNode(NavigationNode):
 
 	def contents_html_template(self):
 		method_name = self.method_element.Name
-		type_helper = self.type_helper(self.method_element.OwnerType)
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (method_name, "Method")
-		html_template.h1     = "%s.%s %s" % (type_helper.short_name(), method_name, "Method")
+		html_template.h1     = "%s.%s %s" % (self.method_element.OwnerType.ShortName, method_name, "Method")
 		html_template.main   = self.__summary_section() + \
 			self.__syntax_section() + \
 			self.__exceptions_section() + \

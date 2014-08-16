@@ -104,5 +104,50 @@ namespace IglooCastle.CLI
 
 			return baseTypeElement != null;
 		}
+
+		public string ShortName
+		{
+			get
+			{
+				return Documentation.TypePrinter.Name(this, TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments);
+			}
+		}
+
+		public string FullName
+		{
+			get
+			{
+				return Documentation.TypePrinter.Name(this, TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments | TypePrinter.NameComponents.Namespace);
+			}
+		}
+
+		public string TypeKind
+		{
+			get
+			{
+				if (Type.IsEnum)
+				{
+					return "Enumeration";
+				}
+
+				if (Type.IsValueType)
+				{
+					return "Struct";
+				}
+
+				if (Type.IsInterface)
+				{
+					return "Interface";
+				}
+
+				if (Type.IsClass)
+				{
+					return "Class";
+				}
+
+				// what else?
+				return "Type";
+			}
+		}
 	}
 }
