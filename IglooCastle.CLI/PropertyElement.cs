@@ -36,5 +36,23 @@ namespace IglooCastle.CLI
 		{
 			return Property.GetSetMethod(nonPublic);
 		}
+
+		protected override IXmlComment GetXmlComment()
+		{
+			IXmlComment result = Documentation.GetXmlComment("//member[@name=\"P:" +
+					Property.ReflectedType.FullName + "." +
+					Property.Name + "\"]");
+
+			if (result == null)
+			{
+				var basePropertyElement = BasePropertyElement();
+				if (basePropertyElement != null)
+				{
+					result = basePropertyElement.GetXmlComment();
+				}
+			}
+
+			return result;
+		}
 	}
 }

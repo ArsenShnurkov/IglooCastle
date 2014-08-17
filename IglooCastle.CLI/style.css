@@ -75,12 +75,6 @@ section {
 	padding: 1%;
 }
 
-footer {
-	clear: both;
-	border-top: 1px solid #ccc;
-	padding-top: 1em;
-}
-
 ol.inherited {
 	list-style: none;
 	padding: 0;
@@ -97,4 +91,20 @@ ol.inherited:after {
 	content:'';
 	display:table;
 	clear: both;
+}
+
+.info {
+	background: #cdf;
+	border: 1px solid #009;
+	padding: 1em;
+}
+
+/**
+ * Footer
+ */
+
+footer {
+	clear: both;
+	border-top: 1px solid #ccc;
+	padding-top: 1em;
 }

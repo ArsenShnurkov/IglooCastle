@@ -54,6 +54,16 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public ICollection<EnumMemberElement> EnumMembers
+		{
+			get
+			{
+				return Type.IsEnum ? 
+					Enum.GetNames(Type).Select(n => new EnumMemberElement(Documentation, this, n)).ToList()
+					: new List<EnumMemberElement>(0);
+			}
+		}
+
 		public Type[] GetInterfaces()
 		{
 			return Member.GetInterfaces();
@@ -148,6 +158,11 @@ namespace IglooCastle.CLI
 				// what else?
 				return "Type";
 			}
+		}
+
+		protected override IXmlComment GetXmlComment()
+		{
+			return Documentation.GetXmlComment("//member[@name=\"T:" + Type.FullName + "\"]");
 		}
 	}
 }

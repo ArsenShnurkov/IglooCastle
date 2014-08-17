@@ -19,5 +19,10 @@ namespace IglooCastle.CLI
 		{
 			return Member.IsExtension();
 		}
+
+		protected override IXmlComment GetXmlComment()
+		{
+			return Documentation.GetMethodDocumentation(OwnerType.Type, Method.Name, Method.GetParameters());
+		}
 	}
 }

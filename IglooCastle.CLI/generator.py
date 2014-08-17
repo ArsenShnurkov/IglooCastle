@@ -387,20 +387,26 @@ class NavigationEnumNode(NavigationNode):
 	def contents_html_template(self):
 		print "Generating page for enum %s" % self.type_element.FullName
 		type_kind            = self.type_element.TypeKind
+		has_flags            = self.type_element.HasAttribute("System.FlagsAttribute")
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (self.type_element.FullName, type_kind)
 		html_template.h1     = "%s %s" % (self.type_element.ShortName, type_kind)
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
-			self.__members_section()
+				<p>%s</p>""", self.type_element.XmlComment.Summary())
+
+		if has_flags:
+			html_template.main += "<p class=\"info\">This is a flags enum; its members can be combined with bitwise operators.</p>"
+
+		html_template.main += self.__members_section()
 
 		return html_template
 
 	def __members_section(self):
-		names = System.Enum.GetNames(self.type_element.Member)
+		enum_members = names = System.Enum.GetNames(self.type_element.Member)
 
-		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % ( name, "", "" ) for name in names ]
+		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % \
+			( enum_member.Name, enum_member.Value, enum_member.XmlComment.Summary() ) for enum_member in self.type_element.EnumMembers ]
 		return """
 		<h2>Members</h2>
 		<table>

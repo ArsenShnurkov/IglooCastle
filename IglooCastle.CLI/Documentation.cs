@@ -129,64 +129,14 @@ namespace IglooCastle.CLI
 			return type;
 		}
 
-		internal IXmlComment GetXmlComment<T>(ReflectedElement<T> reflectedElement)
-			where T : MemberInfo
-		{
-			return GetXmlComment(reflectedElement as ConstructorElement)
-			       ?? GetXmlComment(reflectedElement as PropertyElement)
-			       ?? GetXmlComment(reflectedElement as MethodElement)
-				   ?? GetXmlComment(reflectedElement as TypeElement);
-		}
-
-		private IXmlComment GetXmlComment(ConstructorElement constructorElement)
-		{
-			// M:IglooCastle.CLI.NamespaceElement.#ctor(IglooCastle.CLI.Documentation)
-			return constructorElement != null
-				       ? GetMethodDocumentation(constructorElement.OwnerType.Type, "#ctor", constructorElement.Constructor.GetParameters())
-				       : null;
-		}
-
-		private XmlComment GetMethodDocumentation(Type type, string methodName, ParameterInfo[] parameters)
+		internal XmlComment GetMethodDocumentation(Type type, string methodName, ParameterInfo[] parameters)
 		{
 			string paramString = string.Join(",", parameters.Select(p => p.ParameterType.FullName));
 			string attributeValue = type.FullName + "." + methodName + "(" + paramString + ")";
 			return GetXmlComment("//member[@name=\"M:" + attributeValue + "\"]");
 		}
 
-		private IXmlComment GetXmlComment(PropertyElement propertyElement)
-		{
-			IXmlComment result = null;
-
-			while (propertyElement != null && result == null)
-			{
-				result = GetXmlComment("//member[@name=\"P:" +
-					propertyElement.Property.ReflectedType.FullName + "." +
-					propertyElement.Property.Name + "\"]");
-
-				if (result == null)
-				{
-					// try base type?
-					propertyElement = propertyElement.BasePropertyElement();
-				}
-			}
-
-			return result;
-		}
-
-		private IXmlComment GetXmlComment(MethodElement methodElement)
-		{
-			return methodElement != null
-				       ? GetMethodDocumentation(methodElement.OwnerType.Type, methodElement.Method.Name,
-				                                methodElement.Method.GetParameters())
-				       : null;
-		}
-
-		private IXmlComment GetXmlComment(TypeElement typeElement)
-		{
-			return typeElement != null ? GetXmlComment("//member[@name=\"T:" + typeElement.Type.FullName + "\"]") : null;
-		}
-
-		private XmlComment GetXmlComment(string selector)
+		internal XmlComment GetXmlComment(string selector)
 		{
 			return DocumentationSources.Select(xmlDoc => GetXmlComment(xmlDoc, selector)).FirstOrDefault(c => c != null);
 		}

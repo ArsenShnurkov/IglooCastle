@@ -13,5 +13,11 @@ namespace IglooCastle.CLI
 		{
 			get { return Member; }
 		}
+
+		protected override IXmlComment GetXmlComment()
+		{
+			// M:IglooCastle.CLI.NamespaceElement.#ctor(IglooCastle.CLI.Documentation)
+			return Documentation.GetMethodDocumentation(OwnerType.Type, "#ctor", Constructor.GetParameters());
+		}
 	}
 }

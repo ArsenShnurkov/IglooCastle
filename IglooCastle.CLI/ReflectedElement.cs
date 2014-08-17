@@ -25,7 +25,7 @@ namespace IglooCastle.CLI
 
 		public override IXmlComment XmlComment
 		{
-			get { return Documentation.GetXmlComment(this) ?? new MissingXmlComment(); }
+			get { return GetXmlComment() ?? new MissingXmlComment(); }
 		}
 
 		public bool HasAttribute(string attributeName)
@@ -47,5 +47,7 @@ namespace IglooCastle.CLI
 		{
 			return Member.GetCustomAttributes(inherit).Cast<Attribute>();
 		}
+
+		protected abstract IXmlComment GetXmlComment();
 	}
 }

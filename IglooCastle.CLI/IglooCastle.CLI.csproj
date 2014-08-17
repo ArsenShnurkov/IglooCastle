@@ -72,6 +72,7 @@
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
     <Compile Include="Elements.cs" />
+    <Compile Include="EnumMemberElement.cs" />
     <Compile Include="FilenameProvider.cs" />
     <Compile Include="ITypeContainer.cs" />
     <Compile Include="IXmlComment.cs" />
