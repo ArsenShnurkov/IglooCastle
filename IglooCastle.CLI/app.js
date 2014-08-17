@@ -1,20 +1,36 @@
 $(function() {
-	// handler for expand/collapse tree
-	$('.js-expander').click(function() {
-		var $jsExpander = $(this),
-			$li = $jsExpander.closest('li'),
-			$ol = $li.children('ol');
+	function bindEvents() {
+		// handler for expand/collapse tree
+		$('.js-expander').click(function() {
+			var $jsExpander = $(this),
+				$li = $jsExpander.closest('li'),
+				$ol = $li.children('ol');
 
-		if ($jsExpander.hasClass('js-collapsed')) {
-			$jsExpander.removeClass('js-collapsed');
-			$jsExpander.text('-');
-			$ol.slideDown();
-		} else {
-			$jsExpander.addClass('js-collapsed');
-			$jsExpander.text('+');
-			$ol.slideUp();
-		}
-	});
+			if ($jsExpander.hasClass('js-collapsed')) {
+				$jsExpander.removeClass('js-collapsed');
+				$jsExpander.text('-');
+				$ol.slideDown();
+			} else {
+				$jsExpander.addClass('js-collapsed');
+				$jsExpander.text('+');
+				$ol.slideUp();
+			}
+		});
+
+		$('.js-show-inherited').change(function() {
+			var isChecked = $(this).prop("checked");
+			$('.js-show-inherited').prop("checked", isChecked);
+			if (isChecked) {
+				$("tr.inherited").show();
+			} else {
+				$("tr.inherited").hide();
+			}
+		});
+
+	}
+
+
+	bindEvents();
 
 	// collapse up to class level initially
 	$('nav > ol > li > ol > li .js-expander').each(function() {
