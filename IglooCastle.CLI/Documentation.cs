@@ -184,7 +184,12 @@ namespace IglooCastle.CLI
 
 		public MethodElement Find(MethodInfo method)
 		{
-			return Types.SelectMany(m => m.Methods).Single(m => m.Member == method);
+			return Types.SelectMany(t => t.Methods).Single(m => m.Member == method);
+		}
+
+		internal PropertyElement Find(PropertyInfo propertyInfo)
+		{
+			return Types.SelectMany(t => t.Properties).SingleOrDefault(p => p.Property == propertyInfo);
 		}
 	}
 }

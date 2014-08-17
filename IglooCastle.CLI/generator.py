@@ -103,23 +103,76 @@ class NavigationNode:
 	def children_nav_html(self):
 		return "".join(child.nav_html() for child in self.children())
 
-	def property_link(self, property_element):
-		t = property_element.DeclaringType
-		if not property_element.Documentation.IsLocalType(t):
-			return property_element.Name
-		else:
-			return a(self.filename_provider.Filename(property_element), property_element.Name)
-
-	def method_link(self, method_element):
-		t = method_element.DeclaringType
-		signature = self.type_printer().Print(method_element)
-		if not method_element.Documentation.IsLocalType(t):
-			return signature
-		else:
-			return a(self.filename_provider.Filename(method_element), signature)
-
 	def type_printer(self):
 		return self.documentation().TypePrinter
+
+	def inherited_from(self, member_element):
+		if not member_element.IsInherited:
+			inherited_link = ""
+		else:
+			inherited_link = "(Inherited from %s.)" % self.type_printer().Print(member_element.DeclaringType)
+		return inherited_link
+
+	def properties_table(self, properties):
+		def property_list_item(property):
+			name        = property.Name
+			ptype       = self.type_printer().Print(property.PropertyType)
+			description = (property.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property)
+			link        = self.filename_provider.Filename(property)
+			tr_class    = ' class="inherited"' if property.IsInherited else ""
+			return """
+				<tr%s>
+					<td>%s</td>
+					<td>%s</td>
+					<td>%s</td>
+				</tr>
+			""" % (tr_class, self.type_printer().Print(property), ptype, description)
+
+		return HtmlTemplate.fmt_non_empty(
+			"""
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				%s
+				</tbody>
+			</table>""",
+			"".join(property_list_item(p) for p in properties))
+
+	def method_table(self, methods):
+		"""Prints a TABLE of methods."""
+
+		def method_list_item(method_element):
+			inheritedLink = self.inherited_from(method_element)
+			tr_class      = ' class="inherited"' if method_element.IsInherited else ""
+
+			result = """
+				<tr%s>
+					<td>%s</td>
+					<td>%s %s</td>
+				</tr>
+			""" % (tr_class, self.type_printer().Print(method_element), method_element.XmlComment.Summary() or "&nbsp;", inheritedLink)
+
+			return result
+
+		return HtmlTemplate.fmt_non_empty(
+			"""
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				%s
+				</tbody>
+			</table>""", "".join(method_list_item(m) for m in methods))
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -277,28 +330,7 @@ class NavigationTypeNode(NavigationNode):
 
 		return "<p>Known derived types: %s</p>" % ", ".join(self.type_printer().Print(t) for t in derived_types)
 
-	def inherited_from(self, member_element):
-		if not member_element.IsInherited:
-			inherited_link = ""
-		else:
-			inherited_link = "(Inherited from %s.)" % self.type_printer().Print(member_element.DeclaringType)
-		return inherited_link
-
 	def properties_section(self):
-		def property_list_item(property):
-			name        = property.Name
-			ptype       = self.type_printer().Print(property.PropertyType)
-			description = (property.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property)
-			link        = self.filename_provider.Filename(property)
-			tr_class    = ' class="inherited"' if property.IsInherited else ""
-			return """
-				<tr%s>
-					<td>%s</td>
-					<td>%s</td>
-					<td>%s</td>
-				</tr>
-			""" % (tr_class, self.property_link(property), ptype, description)
-
 		return HtmlTemplate.fmt_non_empty(
 			"""
 			<h2>Properties</h2>
@@ -307,34 +339,10 @@ class NavigationTypeNode(NavigationNode):
 				<input type="checkbox" checked="checked" class="js-show-inherited" />
 				Inherited
 			</div>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-				%s
-				</tbody>
-			</table>""",
-			"".join(property_list_item(p) for p in self.type_element.Properties))
+			%s
+			""", self.properties_table(self.type_element.Properties))
 
 	def methods_section(self):
-		def method_list_item(method_element):
-			inheritedLink = self.inherited_from(method_element)
-			tr_class      = ' class="inherited"' if method_element.IsInherited else ""
-
-			result = """
-				<tr%s>
-					<td>%s</td>
-					<td>%s %s</td>
-				</tr>
-			""" % (tr_class, self.method_link(method_element), method_element.XmlComment.Summary() or "&nbsp;", inheritedLink)
-
-			return result
-
 		return HtmlTemplate.fmt_non_empty(
 			"""
 			<h2>Methods</h2>
@@ -343,20 +351,15 @@ class NavigationTypeNode(NavigationNode):
 				<input type="checkbox" checked="checked" class="js-show-inherited" />
 				Inherited
 			</div>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-				%s
-				</tbody>
-			</table>""", "".join(method_list_item(m) for m in self.type_element.Methods))
+			%s
+			""", self.method_table(self.type_element.Methods))
 
 	def extension_methods_section(self):
-		return "<h2>Extension methods</h2><p>todo methods that extend this class defined in this documentation</p>"
+		return HtmlTemplate.fmt_non_empty(
+			"""
+			<h2>Extension Methods</h2>
+			%s
+			""", self.method_table(self.type_element.ExtensionMethods))
 
 	def documentation(self):
 		return self.type_element.Documentation
@@ -462,7 +465,17 @@ class NavigationPropertiesNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Properties" % self.type_element.FullName
 		html_template.h1     = "%s Properties" % self.type_element.ShortName
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + self.property_link(p) + "</li>" for p in self.type_element.Properties)
+		html_template.main   = HtmlTemplate.fmt_non_empty(
+			"""
+			<h2>Properties</h2>
+			<div>
+				Show:
+				<input type="checkbox" checked="checked" class="js-show-inherited" />
+				Inherited
+			</div>
+			%s
+			""", self.properties_table(self.type_element.Properties))
+
 		return html_template
 
 
@@ -487,7 +500,16 @@ class NavigationMethodsNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Methods" % self.type_element.FullName
 		html_template.h1     = "%s Methods" % self.type_element.ShortName
-		html_template.main   = "<ol>%s</ol>" % "".join("<li>" + self.method_link(m) + "</li>" for m in self.type_element.Methods)
+		html_template.main   = HtmlTemplate.fmt_non_empty(
+			"""
+			<h2>Methods</h2>
+			<div>
+				Show:
+				<input type="checkbox" checked="checked" class="js-show-inherited" />
+				Inherited
+			</div>
+			%s
+			""", self.method_table(self.type_element.Methods))
 		return html_template
 
 
@@ -524,10 +546,8 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		html_template.main = ""
 
 		for t in list(dct):
-			html_template.main += "<h2>%s</h2>" % self.type_printer().Print(t)
-			html_template.main += "<ol>"
-			html_template.main += "".join("<li>" + self.method_link(m) + "</li>" for m in dct[t])
-			html_template.main += "</ol>"
+			html_template.main += "<h2>Extension methods for %s</h2>" % self.type_printer().Print(t)
+			html_template.main += self.method_table(dct[t])
 
 		return html_template
 

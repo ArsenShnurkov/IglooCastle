@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -7,49 +8,54 @@ namespace IglooCastle.CLI
 {
 	public class FilenameProvider
 	{
-		public string Filename(NamespaceElement @namespace)
+		public string Filename(NamespaceElement @namespace, string prefix = "N", string suffix = "html")
 		{
-			return string.Format("N_{0}.html", @namespace.Namespace);
+			return string.Format("{0}_{1}.{2}", prefix, @namespace.Namespace, suffix);
 		}
 
-		public string Filename(NamespaceElement @namespace, string prefix)
+		public string Filename(TypeElement type, string prefix = "T", string suffix = "html")
 		{
-			return string.Format("{0}_{1}", prefix, Filename(@namespace));
+			return Filename(type.Member, prefix, suffix);
 		}
 
-		public string Filename(TypeElement type)
+		public string Filename(Type type, string prefix = "T", string suffix = "html")
 		{
-			return Filename(type, "T");
-		}
-
-		public string Filename(Type type)
-		{
-			return Filename(type, "T");
-		}
-
-		public string Filename(TypeElement type, string prefix)
-		{
-			return string.Format("{0}_{1}.html", prefix, TypeFilename(type));
-		}
-
-		public string Filename(Type type, string prefix)
-		{
-			return string.Format("{0}_{1}.html", prefix, TypeFilename(type));
+			return string.Format("{0}_{1}.{2}", prefix, FilenamePartForMainType(type), suffix);
 		}
 
 		public string Filename(PropertyElement property)
 		{
-			return string.Format("P_{0}.{1}.html", TypeFilename(property.Property.DeclaringType), property.Name);
+			return Filename(property.Member);
+		}
+
+		public string Filename(PropertyInfo property)
+		{
+			return Filename(property.DeclaringType, "P", string.Format("{0}.html", property.Name));
 		}
 
 		public string Filename(MethodElement method)
 		{
-			string parameters = string.Join(",", method.Method.GetParameters().Select(p => FilenamePartForParameter(p.ParameterType)));
-			var result = string.Format("M_{0}.{1}{2}.html", TypeFilename(method.Method.DeclaringType), method.Name, string.IsNullOrEmpty(parameters) ? string.Empty : "-" + parameters);
+			return Filename(method.Member);
+		}
+
+		public string Filename(MethodInfo method)
+		{
+			string parameters = string.Join(",", method.GetParameters().Select(p => FilenamePartForParameter(p.ParameterType)));
+			var result = Filename(method.DeclaringType, "M", string.Format("{0}{1}.html", method.Name, string.IsNullOrEmpty(parameters) ? string.Empty : "-" + parameters));
 			return result;
 		}
 
-		public string FilenamePartForParameter(Type parameterType)
+		private string FilenamePartForMainType(Type type)
+		{
+			if (type.IsGenericType && !type.IsGenericTypeDefinition)
+			{
+				type = type.GetGenericTypeDefinition();
+			}
+
+			return type.FullName;
+		}
+
+		private string FilenamePartForParameter(Type parameterType)
 		{
 			if (parameterType.IsGenericType)
 			{
@@ -61,23 +67,6 @@ namespace IglooCastle.CLI
 			{
 				return SystemTypes.Alias(parameterType) ?? parameterType.FullName;
 			}
-		}
-
-		public string TypeFilename(Type type)
-		{
-			if (type.IsGenericType && !type.IsGenericTypeDefinition)
-			{
-				type = type.GetGenericTypeDefinition();
-			}
-
-			var result = type.FullName;
-			//var result = type.FullName.Replace('`', '_');
-			return result;
-		}
-
-		public string TypeFilename(TypeElement type)
-		{
-			return TypeFilename(type.Type);
 		}
 	}
 }

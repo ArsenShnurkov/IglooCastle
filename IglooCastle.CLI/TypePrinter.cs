@@ -23,43 +23,32 @@ namespace IglooCastle.CLI
 
 		public string Print(Type type)
 		{
-			return Print(type, null);
-		}
-
-		public string Print(TypeElement typeElement, PrintOptions printOptions)
-		{
-			return Print(typeElement.Member, printOptions);
-		}
-
-		public string Print(Type type, PrintOptions printOptions)
-		{
 			if (type.IsArray)
 			{
-				return Print(type.GetElementType(), printOptions) + "[]";
+				return Print(type.GetElementType()) + "[]";
 			}
 
 			if (type.IsByRef)
 			{
-				return Print(type.GetElementType(), printOptions);
+				return Print(type.GetElementType());
 			}
 
-			string result = DoPrint(type, printOptions);
+			string result = DoPrint(type);
 
 			if (type.IsGenericType)
 			{
 				result += "&lt;";
-				result += string.Join(", ", type.GetGenericArguments().Select(t => Print(t, printOptions)));
+				result += string.Join(", ", type.GetGenericArguments().Select(t => Print(t)));
 				result += "&gt;";
 			}
 
 			return result;
 		}
 
-		private string DoPrint(Type type, PrintOptions printOptions)
+		private string DoPrint(Type type)
 		{
-			printOptions = printOptions ?? PrintOptions.Default;
-			string link = printOptions.Links ? Link(type) : null;
-			string text = link != null || printOptions.ShortName ? ShortName(type) : FullName(type);
+			string link = Link(type);
+			string text = link != null ? ShortName(type) : FullName(type);
 			if (link != null)
 			{
 				return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
@@ -137,6 +126,26 @@ namespace IglooCastle.CLI
 			return null;
 		}
 
+		private string Link(PropertyInfo property)
+		{
+			if (_documentation.IsLocalType(property.DeclaringType))
+			{
+				return _filenameProvider.Filename(property);
+			}
+
+			return null;
+		}
+
+		private string Link(MethodInfo method)
+		{
+			if (_documentation.IsLocalType(method.DeclaringType))
+			{
+				return _filenameProvider.Filename(method);
+			}
+
+			return null;
+		}
+
 		private string Escape(string link)
 		{
 			return link.Replace("`", "%60");
@@ -144,37 +153,45 @@ namespace IglooCastle.CLI
 
 		public string Print(MethodElement methodElement)
 		{
-			return Print(methodElement.Member);
+			return Print(methodElement.Method);
 		}
 
-		public string Print(MethodElement methodElement, PrintOptions printOptions)
+		public string Print(PropertyElement propertyElement)
 		{
-			return Print(methodElement.Member, printOptions);
+			return Print(propertyElement.Member);
+		}
+
+		public string Print(PropertyInfo propertyInfo)
+		{
+			string link = Link(propertyInfo);
+			if (link == null)
+			{
+				return propertyInfo.Name;
+			}
+
+			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), propertyInfo.Name);
 		}
 
 		public string Print(MethodInfo methodInfo)
 		{
-			return Print(methodInfo, PrintOptions.MethodOverload);
-		}
-
-		public string Print(MethodInfo methodInfo, PrintOptions printOptions)
-		{
-			if (methodInfo.IsOverload() || !printOptions.HideParametersForNonOverloads)
+			string text;
+			if (methodInfo.IsOverload())
 			{
 				bool isExtension = methodInfo.IsExtension();
-				return methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + Print(p.ParameterType, printOptions))) + ")";
+				text = methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + ShortName(p.ParameterType))) + ")";
+			}
+			else
+			{
+				text = methodInfo.Name;
 			}
 
-			return methodInfo.Name;
-		}
+			string link = Link(methodInfo);
+			if (link == null)
+			{
+				return text;
+			}
 
-		public sealed class PrintOptions
-		{
-			public static readonly PrintOptions MethodOverload = new PrintOptions { Links = false, ShortName = true, HideParametersForNonOverloads = true };
-			public static readonly PrintOptions Default = new PrintOptions { Links = true, ShortName = false };
-			public bool Links { get; set; }
-			public bool ShortName { get; set; }
-			public bool HideParametersForNonOverloads { get; set; }
+			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
 		}
 
 		[Flags]
@@ -207,9 +224,9 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
-		public string Syntax(MethodElement methodElement, PrintOptions printOptions = null)
+		public string Syntax(MethodElement methodElement)
 		{
-			return Syntax(methodElement.Member, printOptions);
+			return Syntax(methodElement.Member);
 		}
 
 		private string AccessPrefix(MemberInfo member)
@@ -249,13 +266,13 @@ namespace IglooCastle.CLI
 			return modifiers.TrimStart(' ');
 		}
 		
-		public string Syntax(MethodInfo method, PrintOptions printOptions = null)
+		public string Syntax(MethodInfo method)
 		{
 			string access = AccessPrefix(method);
 			string modifiers = Modifiers(method);			
-			string returnType = Print(method.ReturnType, printOptions);
+			string returnType = Print(method.ReturnType);
 			bool isExtension = method.IsExtension();
-			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, printOptions)));
+			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0)));
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
@@ -270,7 +287,7 @@ namespace IglooCastle.CLI
 			return result.TrimStart(' ');
 		}
 
-		private string FormatParameter(ParameterInfo parameterInfo, bool isExtensionThis, PrintOptions printOptions)
+		private string FormatParameter(ParameterInfo parameterInfo, bool isExtensionThis)
 		{
 			string result = "";
 			Type type = parameterInfo.ParameterType;
@@ -292,42 +309,34 @@ namespace IglooCastle.CLI
 				result += "this ";
 			}
 
-			result += Print(type, printOptions);
+			result += Print(type);
 			result += " ";
 			result += parameterInfo.Name;
 			return result;
 		}
 		
-		public string Syntax(PropertyElement propertyElement, PrintOptions printOptions = null)
+		public string Syntax(PropertyElement propertyElement)
 		{
-			return Syntax(propertyElement.Member, printOptions);
+			return Syntax(propertyElement.Member);
 		}
 
-		public string Syntax(PropertyInfo property, PrintOptions printOptions = null)
+		public string Syntax(PropertyInfo property)
 		{
 			var getter = property.CanRead ? property.GetGetMethod() : null;
 			var setter = property.CanWrite ? property.GetSetMethod() : null;
 
-			return Join(AccessPrefix(getter), Print(property.PropertyType, printOptions), property.Name, "{", 
+			return Join(AccessPrefix(getter), Print(property.PropertyType), property.Name, "{", 
 				(getter != null ? "get;" : ""),
 				(setter != null ? "set;" : ""),
 				"}");
 		}
 
-		public string Print(NamespaceElement namespaceElement, PrintOptions printOptions = null)
+		public string Print(NamespaceElement namespaceElement)
 		{
-			printOptions = printOptions ?? PrintOptions.Default;
-			if (printOptions.Links)
-			{
-				return string.Format(
-					"<a href=\"{0}\">{1}</a>",
-					_filenameProvider.Filename(namespaceElement),
-					namespaceElement.Namespace);
-			}
-			else
-			{
-				return namespaceElement.Namespace;
-			}
+			return string.Format(
+				"<a href=\"{0}\">{1}</a>",
+				_filenameProvider.Filename(namespaceElement),
+				namespaceElement.Namespace);
 		}
 	}
 }

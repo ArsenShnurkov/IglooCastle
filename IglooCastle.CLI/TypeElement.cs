@@ -54,6 +54,14 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public ICollection<MethodElement> ExtensionMethods
+		{
+			get
+			{
+				return Documentation.Types.SelectMany(t => t.Methods).Where(m => m.IsExtension() && m.GetParameters()[0].ParameterType.IsAssignableFrom(Member)).ToList();
+			}
+		}
+
 		public ICollection<EnumMemberElement> EnumMembers
 		{
 			get

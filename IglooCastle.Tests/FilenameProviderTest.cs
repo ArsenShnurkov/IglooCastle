@@ -32,16 +32,17 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestMethodWithStringAlias()
 		{
-			// public string Filename(TypeElement type, string prefix)
-			const string expected = "M_IglooCastle.CLI.FilenameProvider.Filename-IglooCastle.CLI.TypeElement,string.html";
+			// public string Filename(TypeElement type, string prefix, string suffix)
+			const string expected = "M_IglooCastle.CLI.FilenameProvider.Filename-IglooCastle.CLI.TypeElement,string,string.html";
 
 			// locate type
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(FilenameProvider));
 
 			Func<ParameterInfo[], bool> matchTargetMethod =
-				parameters => parameters.Length == 2
+				parameters => parameters.Length == 3
 					&& parameters[0].ParameterType == typeof(TypeElement)
-					&& parameters[1].ParameterType == typeof(string);
+					&& parameters[1].ParameterType == typeof(string)
+					&& parameters[2].ParameterType == typeof(string);
 			MethodElement targetMethod = targetTypeElement.Methods.Single(m => matchTargetMethod(m.Member.GetParameters()));
 
 			FilenameProvider filenameProvider = new FilenameProvider();
