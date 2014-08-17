@@ -88,15 +88,35 @@ ol.inherited li {
 }
 
 ol.inherited:after {
+	clear: both;
 	content:'';
 	display:table;
-	clear: both;
 }
 
 .info {
 	background: #cdf;
 	border: 1px solid #009;
 	padding: 1em;
+}
+
+table {
+	border-collapse: separate;
+	border-left: 1px solid #ccc;
+	border-spacing: 0;
+	border-top: 1px solid #ccc;
+	width: 100%;
+}
+
+td, th {
+	border-bottom: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+	padding: 0.75em;
+}
+
+/* Value column of the enum members table */
+table.enum_members tr > *:nth-child(2) {
+	text-align: right;
+	width: 10%;
 }
 
 /**

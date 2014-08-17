@@ -288,7 +288,7 @@ class NavigationTypeNode(NavigationNode):
 		def property_list_item(property):
 			name        = property.Name
 			ptype       = self.type_printer().Print(property.PropertyType)
-			description = property.XmlComment.Summary() + " " + self.inherited_from(property)
+			description = (property.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property)
 			link        = self.filename_provider.Filename(property)
 			return """<tr>
 			<td>%s</td>
@@ -406,10 +406,10 @@ class NavigationEnumNode(NavigationNode):
 		enum_members = names = System.Enum.GetNames(self.type_element.Member)
 
 		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % \
-			( enum_member.Name, enum_member.Value, enum_member.XmlComment.Summary() ) for enum_member in self.type_element.EnumMembers ]
+			( enum_member.Name, enum_member.Value, enum_member.XmlComment.Summary() or "&nbsp;" ) for enum_member in self.type_element.EnumMembers ]
 		return """
 		<h2>Members</h2>
-		<table>
+		<table class=\"enum_members\">
 			<thead>
 				<tr>
 					<th>Name</th>
