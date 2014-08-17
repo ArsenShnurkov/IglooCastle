@@ -1,3 +1,19 @@
+var myLocalStorage = {
+	hideInherited : function(value) {
+		if (typeof value !== 'undefined') {
+			if (value) {
+				localStorage.setItem("hide-inherited", !!value);
+			} else {
+				localStorage.removeItem("hide-inherited");
+			}
+
+			return value;
+		} else {
+			return localStorage['hide-inherited'];
+		}
+	}
+};
+
 $(function() {
 	function bindEvents() {
 		// handler for expand/collapse tree
@@ -25,6 +41,8 @@ $(function() {
 			} else {
 				$("tr.inherited").hide();
 			}
+
+			myLocalStorage.hideInherited(!isChecked);
 		});
 
 	}
@@ -62,4 +80,9 @@ $(function() {
 			});
 		}
 	});
+
+	if (myLocalStorage.hideInherited()) {
+		$('tr.inherited').hide();
+		$('.js-show-inherited').prop('checked', false);
+	}
 });
