@@ -155,7 +155,7 @@ class NavigationNamespaceNode(NavigationNode):
 		return self.namespace_element.Namespace + " Namespace"
 
 	def children(self):
-		result = [ NavigationTypeNode(t) for t in self.namespace_element.Types ]
+		result = [ self.__type_node(t) for t in self.namespace_element.Types ]
 		result.append( NavigationExtensionMethodsNode(self.namespace_element) )
 		return result
 
@@ -189,6 +189,12 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def documentation(self):
 		return self.namespace_element.Documentation
+
+	def __type_node(self, type_element):
+		if type_element.IsEnum:
+			return NavigationEnumNode(type_element)
+		else:
+			return NavigationTypeNode(type_element)
 
 
 class NavigationTypeNode(NavigationNode):
@@ -237,6 +243,7 @@ class NavigationTypeNode(NavigationNode):
 			self.extension_methods_section()
 
 		# TODO: operators
+		# TODO: separate attribute template?
 
 		return html_template
 
@@ -364,6 +371,51 @@ class NavigationTypeNode(NavigationNode):
 
 	def format_parameters(self, something):
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
+
+
+class NavigationEnumNode(NavigationNode):
+	def __init__(self, type_element):
+		NavigationNode.__init__(self)
+		self.type_element = type_element
+
+	def href(self):
+		return self.filename_provider.Filename(self.type_element)
+
+	def text(self):
+		return self.type_element.ShortName + " " + self.type_element.TypeKind
+
+	def contents_html_template(self):
+		print "Generating page for enum %s" % self.type_element.FullName
+		type_kind            = self.type_element.TypeKind
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s %s" % (self.type_element.FullName, type_kind)
+		html_template.h1     = "%s %s" % (self.type_element.ShortName, type_kind)
+		html_template.main   = HtmlTemplate.fmt_non_empty("""
+				<h2>Summary</h2>
+				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
+			self.__members_section()
+
+		return html_template
+
+	def __members_section(self):
+		names = System.Enum.GetNames(self.type_element.Member)
+
+		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % ( name, "", "" ) for name in names ]
+		return """
+		<h2>Members</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Value</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+			%s
+			</tbody>
+		</table>
+		""" % "".join(html)
 
 
 class NavigationPropertiesNode(NavigationNode):

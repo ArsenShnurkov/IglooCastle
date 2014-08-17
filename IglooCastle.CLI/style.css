@@ -17,7 +17,7 @@ nav {
 	padding: 1%;
 	float: left;
 	margin: 0;
-	width: 23%;
+	width: 33%;
 	overflow: scroll;
 }
 
@@ -49,6 +49,7 @@ nav ol ol {
 nav a {
 	display: block;
 	float: left;
+	white-space: nowrap;
 }
 
 nav li {
@@ -70,7 +71,7 @@ li.leaf > a {
 
 section {
 	float: left;
-	width: 73%;
+	width: 63%;
 	padding: 1%;
 }
 
