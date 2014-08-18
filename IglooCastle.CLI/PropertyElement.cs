@@ -16,6 +16,11 @@ namespace IglooCastle.CLI
 			get { return Member; }
 		}
 
+		public TypeElement PropertyType
+		{
+			get { return Documentation.Find(Property.PropertyType); }
+		}
+
 		public bool IsStatic
 		{
 			get
@@ -31,7 +36,7 @@ namespace IglooCastle.CLI
 
 		public PropertyElement BasePropertyElement()
 		{
-			TypeElement baseTypeElement = OwnerType.BaseTypeElement;
+			TypeElement baseTypeElement = OwnerType.BaseType;
 			if (baseTypeElement == null)
 			{
 				return null;

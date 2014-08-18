@@ -7,7 +7,7 @@ namespace IglooCastle.CLI
 	/// This is the root of all documentation elements.
 	/// </summary>
 	/// <typeparam name="TMember">The type of the member that this class documents.</typeparam>
-	public abstract class DocumentationElement<TMember> : DynamicObject
+	public abstract class DocumentationElement<TMember>
 	{
 		private readonly Documentation _documentation;
 
@@ -31,16 +31,6 @@ namespace IglooCastle.CLI
 		public Documentation Documentation
 		{
 			get { return _documentation; }
-		}
-
-		public override bool TryGetMember(
-			GetMemberBinder binder, out object result)
-		{
-			string name = binder.Name;
-			var pi = typeof(TMember).GetProperty(name);
-			var hasProperty = pi != null && pi.CanRead;
-			result = hasProperty ? pi.GetValue(Member) : null;
-			return hasProperty;
 		}
 	}
 }

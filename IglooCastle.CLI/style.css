@@ -125,8 +125,6 @@ table.members td:first-child {
 }
 
 table.members td:first-child span {
-	background: #efe;
-    border: 1px solid #9c9;
     display: inline-block;
     font-size: 80%;
     height: 32px;
@@ -135,6 +133,16 @@ table.members td:first-child span {
     overflow: hidden;
     text-align: center;
     width: 32px;
+}
+
+span.public, span.static {
+	background: #efe;
+    border: 1px solid #9c9;
+}
+
+span.protected {
+	background: #fc6;
+	border: 1px solid #c93;
 }
 
 /**

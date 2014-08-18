@@ -452,8 +452,6 @@ class NavigationEnumNode(NavigationNode):
 		return html_template
 
 	def __members_section(self):
-		enum_members = names = System.Enum.GetNames(self.type_element.Member)
-
 		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % \
 			( enum_member.Name, enum_member.Value, enum_member.XmlComment.Summary() or "&nbsp;" ) for enum_member in self.type_element.EnumMembers ]
 		return """

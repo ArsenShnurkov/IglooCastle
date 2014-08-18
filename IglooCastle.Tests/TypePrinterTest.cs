@@ -203,8 +203,8 @@ namespace IglooCastle.Tests
 		[Test]
 		public void Syntax_MethodInfo_Override()
 		{
-			const string expected = "public override <a href=\"http://msdn.microsoft.com/en-us/library/system.boolean%28v=vs.110%29.aspx\">bool</a> TryGetMember(<a href=\"http://msdn.microsoft.com/en-us/library/system.dynamic.getmemberbinder%28v=vs.110%29.aspx\">GetMemberBinder</a> binder, out <a href=\"http://msdn.microsoft.com/en-us/library/system.object%28v=vs.110%29.aspx\">object</a> result)";
-			var method = typeof(DocumentationElement<>).GetMethod("TryGetMember");
+			const string expected = "public override <a href=\"http://msdn.microsoft.com/en-us/library/system.reflection.methodattributes%28v=vs.110%29.aspx\">MethodAttributes</a> GetAccess()";
+			var method = typeof(MethodElement).GetMethod("GetAccess");
 			Assert.AreEqual(expected, _typePrinter.Syntax(method));
 		}
 

@@ -191,5 +191,10 @@ namespace IglooCastle.CLI
 		{
 			return Types.SelectMany(t => t.Properties).SingleOrDefault(p => p.Property == propertyInfo);
 		}
+
+		internal TypeElement Find(Type baseType)
+		{
+			return Types.FirstOrDefault(t => t.Type == baseType) ?? new ExternalTypeElement(this, baseType);
+		}
 	}
 }

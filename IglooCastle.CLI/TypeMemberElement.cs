@@ -14,6 +14,8 @@ namespace IglooCastle.CLI
 
 		public TypeElement OwnerType { get; private set; }
 
+		public TypeElement DeclaringType { get { return Documentation.Find(Member.DeclaringType); } }
+
 		public override NamespaceElement NamespaceElement
 		{
 			get { return Documentation.Namespaces.Single(n => n.Namespace == OwnerType.Member.Namespace); }

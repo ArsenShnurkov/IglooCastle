@@ -5,6 +5,11 @@ using System.Reflection;
 
 namespace IglooCastle.CLI
 {
+	public class ExternalTypeElement : TypeElement
+	{
+		public ExternalTypeElement(Documentation owner, Type type) : base(owner, type) { }
+	}
+
 	public class TypeElement : ReflectedElement<Type>
 	{
 		public TypeElement(Documentation owner, Type type)
@@ -20,6 +25,41 @@ namespace IglooCastle.CLI
 		internal Type Type
 		{
 			get { return Member; }
+		}
+
+		public bool IsEnum
+		{
+			get { return Member.IsEnum; }
+		}
+
+		public bool IsClass
+		{
+			get { return Member.IsClass; }
+		}
+
+		public bool IsInterface
+		{
+			get { return Member.IsInterface; }
+		}
+
+		public TypeElement BaseType
+		{
+			get
+			{
+				Type baseType = Type.BaseType;
+				if (baseType == null)
+				{
+					return null;
+				}
+
+				baseType = Documentation.Normalize(baseType);
+				return Documentation.Find(baseType);
+			}
+		}
+
+		public Assembly Assembly
+		{
+			get { return Member.Assembly; }
 		}
 
 		public ICollection<ConstructorElement> Constructors
@@ -92,21 +132,6 @@ namespace IglooCastle.CLI
 			return Member.GetGenericArguments();
 		}
 
-		public TypeElement BaseTypeElement
-		{
-			get
-			{
-				Type baseType = Type.BaseType;
-				if (baseType == null)
-				{
-					return null;
-				}
-
-				baseType = Documentation.Normalize(baseType);
-				return Documentation.Types.FirstOrDefault(t => t.Type == baseType);
-			}
-		}
-
 		public bool HasBaseType(TypeElement typeElement)
 		{
 			if (typeElement == null)
@@ -114,10 +139,10 @@ namespace IglooCastle.CLI
 				return false;
 			}
 
-			TypeElement baseTypeElement = BaseTypeElement;
+			TypeElement baseTypeElement = BaseType;
 			while (baseTypeElement != null && baseTypeElement.Type != typeElement.Type)
 			{
-				baseTypeElement = baseTypeElement.BaseTypeElement;
+				baseTypeElement = baseTypeElement.BaseType;
 			}
 
 			return baseTypeElement != null;
