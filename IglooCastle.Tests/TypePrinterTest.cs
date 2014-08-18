@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -180,6 +181,14 @@ namespace IglooCastle.Tests
 		{
 			const string expected = "public static <a href=\"http://msdn.microsoft.com/en-us/library/system.string%28v=vs.110%29.aspx\">string</a> Alias(<a href=\"http://msdn.microsoft.com/en-us/library/system.type%28v=vs.110%29.aspx\">Type</a> type)";
 			var method = typeof(SystemTypes).GetMethod("Alias", new[] { typeof(Type) });
+			Assert.AreEqual(expected, _typePrinter.Syntax(method));
+		}
+
+		[Test]
+		public void Syntax_MethodInfo_Protected()
+		{
+			const string expected = "protected abstract <a href=\"T_IglooCastle.CLI.IXmlComment.html\">IXmlComment</a> GetXmlComment()";
+			var method = typeof(ReflectedElement<>).GetMethod("GetXmlComment", BindingFlags.Instance | BindingFlags.NonPublic);
 			Assert.AreEqual(expected, _typePrinter.Syntax(method));
 		}
 

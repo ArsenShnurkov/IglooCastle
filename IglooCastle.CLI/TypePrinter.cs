@@ -229,11 +229,16 @@ namespace IglooCastle.CLI
 			return Syntax(methodElement.Member);
 		}
 
-		private string AccessPrefix(MemberInfo member)
+		private string AccessPrefix(MethodInfo member)
 		{
 			if (member.ReflectedType.IsInterface)
 			{
 				return string.Empty;
+			}
+
+			if (member.IsFamily)
+			{
+				return "protected";
 			}
 
 			// TODO: more options + tests
@@ -253,14 +258,14 @@ namespace IglooCastle.CLI
 				modifiers += " static";
 			}
 
-			if (method.IsVirtual)
-			{
-				modifiers += method.IsOverride() ? " override" : " virtual";
-			}
 
 			if (method.IsAbstract)
 			{
 				modifiers += " abstract";
+			}
+			else if (method.IsVirtual)
+			{
+				modifiers += method.IsOverride() ? " override" : " virtual";
 			}
 
 			return modifiers.TrimStart(' ');

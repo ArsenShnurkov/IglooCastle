@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
@@ -46,8 +47,8 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Type.GetMethods()
-						   .Where(m => !m.IsSpecialName)
+				return Type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+						   .Where(m => !m.IsSpecialName && !m.IsPrivate)
 						   .OrderBy(m => m.Name)
 						   .Select(m => new MethodElement(Documentation, this, m))
 						   .ToList();
