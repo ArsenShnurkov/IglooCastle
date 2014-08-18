@@ -229,6 +229,20 @@ namespace IglooCastle.CLI
 			return Syntax(methodElement.Member);
 		}
 
+		public string Access(MethodAttributes access)
+		{
+			switch (access)
+			{
+				case MethodAttributes.Family:
+					return "protected";
+				case MethodAttributes.Public:
+					return "public";
+				default:
+					// TODO: more options + tests
+					return access.ToString();
+			}
+		}
+
 		private string AccessPrefix(MethodInfo member)
 		{
 			if (member.ReflectedType.IsInterface)
@@ -236,13 +250,8 @@ namespace IglooCastle.CLI
 				return string.Empty;
 			}
 
-			if (member.IsFamily)
-			{
-				return "protected";
-			}
-
-			// TODO: more options + tests
-			return "public";
+			MethodAttributes access = member.GetAccess();
+			return Access(access);
 		}
 
 		private string Modifiers(MethodInfo method)
@@ -257,7 +266,6 @@ namespace IglooCastle.CLI
 			{
 				modifiers += " static";
 			}
-
 
 			if (method.IsAbstract)
 			{
@@ -327,12 +335,21 @@ namespace IglooCastle.CLI
 
 		public string Syntax(PropertyInfo property)
 		{
-			var getter = property.CanRead ? property.GetGetMethod() : null;
-			var setter = property.CanWrite ? property.GetSetMethod() : null;
+			var getter = property.CanRead ? property.GetMethod : null;
+			var setter = property.CanWrite ? property.SetMethod : null;
 
-			return Join(AccessPrefix(getter), Print(property.PropertyType), property.Name, "{", 
-				(getter != null ? "get;" : ""),
-				(setter != null ? "set;" : ""),
+			var getterAccess = getter != null ? getter.GetAccess() : MethodAttributes.PrivateScope;
+			var setterAccess = setter != null ? setter.GetAccess() : MethodAttributes.PrivateScope;
+			var maxAccess = ReflectionExtensions.Max(getterAccess, setterAccess);
+
+
+			return Join(
+				Access(maxAccess),
+				Print(property.PropertyType),
+				property.Name,
+				"{",
+				getter != null && !getter.IsPrivate ? ((getterAccess != maxAccess) ? Access(getterAccess) + " " : "") + "get;" : "",
+				setter != null && !setter.IsPrivate ? ((setterAccess != maxAccess) ? Access(setterAccess) + " " : "") + "set;" : "",
 				"}");
 		}
 

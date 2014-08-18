@@ -36,7 +36,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Type.GetProperties()
+				return Type.GetPublicAndProtectedProperties()
 					.OrderBy(p => p.Name)
 					.Select(p => new PropertyElement(Documentation, this, p))
 					.ToList();
@@ -47,8 +47,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-						   .Where(m => !m.IsSpecialName && !m.IsPrivate)
+				return Type.GetPublicAndProtectedMethods()
 						   .OrderBy(m => m.Name)
 						   .Select(m => new MethodElement(Documentation, this, m))
 						   .ToList();

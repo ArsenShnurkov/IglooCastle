@@ -113,26 +113,47 @@ class NavigationNode:
 			inherited_link = "(Inherited from %s.)" % self.type_printer().Print(member_element.DeclaringType)
 		return inherited_link
 
+	def ___access_css(self, element):
+		return element.GetAccess().ToString().replace("PrivateScope, ", "")
+
+	def __access_str(self, element):
+		access = element.GetAccess()
+		access_str = self.type_printer().Access(access)
+		access_str = """<span class="%s" title="%s">%s</span>""" % (access_str, access_str, access_str)
+
+		if element.IsStatic:
+			access_str += '<span class="static" title="static">static</span>'
+
+		return access_str
+
 	def properties_table(self, properties):
-		def property_list_item(property):
-			name        = property.Name
-			ptype       = self.type_printer().Print(property.PropertyType)
-			description = (property.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property)
-			link        = self.filename_provider.Filename(property)
-			tr_class    = ' class="inherited"' if property.IsInherited else ""
+		"""Prints a table with the given properties."""
+
+		def property_list_item(property_element):
+			name        = property_element.Name
+			ptype       = self.type_printer().Print(property_element.PropertyType)
+			description = (property_element.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property_element)
+			link        = self.filename_provider.Filename(property_element)
+			tr_class    = " ".join(["inherited" if property_element.IsInherited else "", self.___access_css(property_element)])
 			return """
-				<tr%s>
+				<tr class="%s">
+					<td>%s</td>
 					<td>%s</td>
 					<td>%s</td>
 					<td>%s</td>
 				</tr>
-			""" % (tr_class, self.type_printer().Print(property), ptype, description)
+			""" % (tr_class,
+				   self.__access_str(property_element),
+				   self.type_printer().Print(property_element),
+				   ptype,
+				   description)
 
 		return HtmlTemplate.fmt_non_empty(
 			"""
-			<table>
+			<table class="members properties">
 				<thead>
 					<tr>
+						<th>&nbsp;</th>
 						<th>Name</th>
 						<th>Type</th>
 						<th>Description</th>
@@ -145,26 +166,32 @@ class NavigationNode:
 			"".join(property_list_item(p) for p in properties))
 
 	def method_table(self, methods):
-		"""Prints a TABLE of methods."""
+		"""Prints a table with the given methods."""
 
 		def method_list_item(method_element):
 			inheritedLink = self.inherited_from(method_element)
-			tr_class      = ' class="inherited"' if method_element.IsInherited else ""
+			tr_class      = " ".join(["inherited" if method_element.IsInherited else "", self.___access_css(method_element) ])
 
 			result = """
-				<tr%s>
+				<tr class="%s">
+					<td>%s</td>
 					<td>%s</td>
 					<td>%s %s</td>
 				</tr>
-			""" % (tr_class, self.type_printer().Print(method_element), method_element.XmlComment.Summary() or "&nbsp;", inheritedLink)
+			""" % (tr_class,
+				   self.__access_str(method_element),
+				   self.type_printer().Print(method_element),
+				   method_element.XmlComment.Summary() or "&nbsp;",
+				   inheritedLink)
 
 			return result
 
 		return HtmlTemplate.fmt_non_empty(
 			"""
-			<table>
+			<table class="members methods">
 				<thead>
 					<tr>
+						<th>&nbsp;</th>
 						<th>Name</th>
 						<th>Description</th>
 					</tr>
@@ -350,6 +377,8 @@ class NavigationTypeNode(NavigationNode):
 				Show:
 				<input type="checkbox" checked="checked" class="js-show-inherited" />
 				Inherited
+				<input type="checkbox" checked="checked" class="js-show-protected" />
+				Protected
 			</div>
 			%s
 			""", self.method_table(self.type_element.Methods))

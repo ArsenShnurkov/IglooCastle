@@ -16,6 +16,19 @@ namespace IglooCastle.CLI
 			get { return Member; }
 		}
 
+		public bool IsStatic
+		{
+			get
+			{
+				return Member.IsStatic();
+			}
+		}
+
+		public override MethodAttributes GetAccess()
+		{
+			return Member.GetAccess();
+		}
+
 		public PropertyElement BasePropertyElement()
 		{
 			TypeElement baseTypeElement = OwnerType.BaseTypeElement;
@@ -27,14 +40,20 @@ namespace IglooCastle.CLI
 			return baseTypeElement.Properties.FirstOrDefault(p => p.Name == Name);
 		}
 
-		public MethodInfo GetGetMethod(bool nonPublic)
+		public bool IsPublic
 		{
-			return Property.GetGetMethod(nonPublic);
+			get
+			{
+				return Property.IsPublic();
+			}
 		}
 
-		public MethodInfo GetSetMethod(bool nonPublic)
+		public bool IsFamily
 		{
-			return Property.GetSetMethod(nonPublic);
+			get
+			{
+				return Property.IsFamily();
+			}
 		}
 
 		protected override IXmlComment GetXmlComment()

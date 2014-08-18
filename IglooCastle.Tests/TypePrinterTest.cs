@@ -209,6 +209,14 @@ namespace IglooCastle.Tests
 		}
 
 		[Test]
+		public void Syntax_MethodInfo_ProtectedOverride()
+		{
+			const string expected = "protected override <a href=\"T_IglooCastle.CLI.IXmlComment.html\">IXmlComment</a> GetXmlComment()";
+			var method = typeof(PropertyElement).GetMethod("GetXmlComment", BindingFlags.Instance | BindingFlags.NonPublic);
+			Assert.AreEqual(expected, _typePrinter.Syntax(method));
+		}
+
+		[Test]
 		public void Syntax_MethodInfo_Extension()
 		{
 			const string expected = "public static <a href=\"http://msdn.microsoft.com/en-us/library/system.string%28v=vs.110%29.aspx\">string</a> Summary(this <a href=\"T_IglooCastle.CLI.IXmlComment.html\">IXmlComment</a> xmlComment)";

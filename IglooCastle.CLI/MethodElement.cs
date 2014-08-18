@@ -15,6 +15,11 @@ namespace IglooCastle.CLI
 			get { return Member; }
 		}
 
+		public override MethodAttributes GetAccess()
+		{
+			return Member.GetAccess();
+		}
+
 		public bool IsExtension()
 		{
 			return Member.IsExtension();

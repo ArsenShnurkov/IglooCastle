@@ -23,6 +23,11 @@ namespace IglooCastle.CLI
 			get;
 		}
 
+		public virtual MethodAttributes GetAccess()
+		{
+			return MethodAttributes.Public;
+		}
+
 		public override IXmlComment XmlComment
 		{
 			get { return GetXmlComment() ?? new MissingXmlComment(); }
