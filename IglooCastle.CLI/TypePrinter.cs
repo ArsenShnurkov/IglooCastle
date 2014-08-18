@@ -16,12 +16,13 @@ namespace IglooCastle.CLI
 			_filenameProvider = filenameProvider;
 		}
 
-		public string Print(TypeElement typeElement)
+		[Obsolete]
+		public string Print(Type type)
 		{
-			return Print(typeElement.Member);
+			return Print(_documentation.Find(type));
 		}
 
-		public string Print(Type type)
+		public string Print(TypeElement type)
 		{
 			if (type.IsArray)
 			{
@@ -45,7 +46,7 @@ namespace IglooCastle.CLI
 			return result;
 		}
 
-		private string DoPrint(Type type)
+		private string DoPrint(TypeElement type)
 		{
 			string link = Link(type);
 			string text = link != null ? ShortName(type) : FullName(type);
@@ -59,7 +60,7 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		private Type GetContainerType(Type nestedType)
+		private TypeElement GetContainerType(TypeElement nestedType)
 		{
 			if (!nestedType.IsNested)
 			{
@@ -68,14 +69,14 @@ namespace IglooCastle.CLI
 
 			if (_documentation.IsLocalType(nestedType))
 			{
-				TypeElement containerType = _documentation.FilterTypes(t => t.Member.GetNestedTypes().Contains(nestedType)).Single();
-				return containerType.Member;
+				TypeElement containerType = _documentation.FilterTypes(t => t.GetNestedTypes().Contains(nestedType)).Single();
+				return containerType;
 			}
 
 			throw new NotImplementedException(nestedType.ToString());
 		}
 
-		private string FullName(Type type)
+		private string FullName(TypeElement type)
 		{
 			if (type.IsGenericType)
 			{
@@ -85,16 +86,11 @@ namespace IglooCastle.CLI
 			return SystemTypes.Alias(type) ?? type.FullName ?? ShortName(type);
 		}
 
-		private string ShortName(TypeElement typeElement)
-		{
-			return ShortName(typeElement.Type);
-		}
-
-		private string ShortName(Type type)
+		private string ShortName(TypeElement type)
 		{
 			if (type.IsNested && !type.IsGenericParameter)
 			{
-				Type containerType = GetContainerType(type);
+				TypeElement containerType = GetContainerType(type);
 				return ShortName(containerType) + "." + type.Name;
 			}
 
@@ -106,12 +102,12 @@ namespace IglooCastle.CLI
 			return SystemTypes.Alias(type) ?? type.Name;
 		}
 
-		private bool IsSystemType(Type type)
+		private bool IsSystemType(TypeElement type)
 		{
 			return type.Namespace == "System" || type.Namespace.StartsWith("System.");
 		}
 
-		private string Link(Type type)
+		private string Link(TypeElement type)
 		{
 			if (_documentation.IsLocalType(type))
 			{
@@ -126,7 +122,7 @@ namespace IglooCastle.CLI
 			return null;
 		}
 
-		private string Link(PropertyInfo property)
+		private string Link(PropertyElement property)
 		{
 			if (_documentation.IsLocalType(property.DeclaringType))
 			{
@@ -136,7 +132,7 @@ namespace IglooCastle.CLI
 			return null;
 		}
 
-		private string Link(MethodInfo method)
+		private string Link(MethodElement method)
 		{
 			if (_documentation.IsLocalType(method.DeclaringType))
 			{
@@ -151,31 +147,33 @@ namespace IglooCastle.CLI
 			return link.Replace("`", "%60");
 		}
 
-		public string Print(MethodElement methodElement)
+		[Obsolete]
+		public string Print(MethodInfo methodInfo)
 		{
-			return Print(methodElement.Method);
+			return Print(_documentation.Find(methodInfo));
+		}
+
+		[Obsolete]
+		public string Print(PropertyInfo property)
+		{
+			return Print(_documentation.Find(property));
 		}
 
 		public string Print(PropertyElement propertyElement)
 		{
-			return Print(propertyElement.Member);
-		}
-
-		public string Print(PropertyInfo propertyInfo)
-		{
-			string link = Link(propertyInfo);
+			string link = Link(propertyElement);
 			if (link == null)
 			{
-				return propertyInfo.Name;
+				return propertyElement.Name;
 			}
 
-			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), propertyInfo.Name);
+			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), propertyElement.Name);
 		}
 
-		public string Print(MethodInfo methodInfo)
+		public string Print(MethodElement methodInfo)
 		{
 			string text;
-			if (methodInfo.IsOverload())
+			if (methodInfo.IsOverload)
 			{
 				bool isExtension = methodInfo.IsExtension();
 				text = methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + ShortName(p.ParameterType))) + ")";
@@ -202,12 +200,13 @@ namespace IglooCastle.CLI
 			Namespace = 2
 		}
 
-		public string Name(TypeElement typeElement, NameComponents nameComponents)
+		[Obsolete]
+		public string Name(Type type, NameComponents nameComponents)
 		{
-			return Name(typeElement.Member, nameComponents);
+			return Name(_documentation.Find(type), nameComponents);
 		}
 
-		public string Name(Type type, NameComponents nameComponents)
+		public string Name(TypeElement type, NameComponents nameComponents)
 		{
 			string name = ShortName(type);
 
@@ -224,9 +223,20 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
-		public string Syntax(MethodElement methodElement)
+		[Obsolete]
+		public string Syntax(MethodInfo method)
 		{
-			return Syntax(methodElement.Member);
+			return Syntax(_documentation.Find(method));
+		}
+
+		public string Syntax(MethodElement method)
+		{
+			string access = AccessPrefix(method);
+			string modifiers = Modifiers(method);
+			string returnType = Print(method.ReturnType);
+			bool isExtension = method.IsExtension();
+			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0)));
+			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
 		public string Access(MethodAttributes access)
@@ -243,7 +253,7 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		private string AccessPrefix(MethodInfo member)
+		private string AccessPrefix(MethodElement member)
 		{
 			if (member.ReflectedType.IsInterface)
 			{
@@ -254,7 +264,7 @@ namespace IglooCastle.CLI
 			return Access(access);
 		}
 
-		private string Modifiers(MethodInfo method)
+		private string Modifiers(MethodElement method)
 		{
 			if (method.ReflectedType.IsInterface)
 			{
@@ -273,20 +283,10 @@ namespace IglooCastle.CLI
 			}
 			else if (method.IsVirtual)
 			{
-				modifiers += method.IsOverride() ? " override" : " virtual";
+				modifiers += method.IsOverride ? " override" : " virtual";
 			}
 
 			return modifiers.TrimStart(' ');
-		}
-		
-		public string Syntax(MethodInfo method)
-		{
-			string access = AccessPrefix(method);
-			string modifiers = Modifiers(method);			
-			string returnType = Print(method.ReturnType);
-			bool isExtension = method.IsExtension();
-			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0)));
-			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
 		private string Join(params string[] args)
@@ -300,10 +300,10 @@ namespace IglooCastle.CLI
 			return result.TrimStart(' ');
 		}
 
-		private string FormatParameter(ParameterInfo parameterInfo, bool isExtensionThis)
+		private string FormatParameter(ParameterInfoElement parameterInfo, bool isExtensionThis)
 		{
 			string result = "";
-			Type type = parameterInfo.ParameterType;
+			TypeElement type = parameterInfo.ParameterType;
 			if (type.IsByRef)
 			{
 				type = type.GetElementType();
@@ -328,12 +328,13 @@ namespace IglooCastle.CLI
 			return result;
 		}
 		
-		public string Syntax(PropertyElement propertyElement)
+		[Obsolete]
+		public string Syntax(PropertyInfo property)
 		{
-			return Syntax(propertyElement.Member);
+			return Syntax(_documentation.Find(property));
 		}
 
-		public string Syntax(PropertyInfo property)
+		public string Syntax(PropertyElement property)
 		{
 			var getter = property.CanRead ? property.GetMethod : null;
 			var setter = property.CanWrite ? property.SetMethod : null;

@@ -15,7 +15,7 @@ namespace IglooCastle.Tests
 		[Test]
 		public void GetAccess_MethodInfo_Public()
 		{
-			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(Type) });
+			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(TypeElement) });
 			Assert.AreEqual(MethodAttributes.Public, method.GetAccess());
 		}
 	}

@@ -29,6 +29,32 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public bool CanRead
+		{
+			get { return Member.CanRead; }
+		}
+
+		public bool CanWrite
+		{
+			get { return Member.CanWrite; }
+		}
+
+		public MethodElement GetMethod
+		{
+			get
+			{
+				return new MethodElement(Documentation, OwnerType, Member.GetMethod);
+			}
+		}
+
+		public MethodElement SetMethod
+		{
+			get
+			{
+				return new MethodElement(Documentation, OwnerType, Member.SetMethod);
+			}
+		}
+
 		public override MethodAttributes GetAccess()
 		{
 			return Member.GetAccess();

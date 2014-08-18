@@ -49,8 +49,8 @@ namespace IglooCastle.Tests
 		[Test]
 		public void Print_MethodInfo()
 		{
-			const string expected = "<a href=\"M_IglooCastle.CLI.Documentation.Normalize-System.Type.html\">Normalize(Type)</a>";
-			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(Type) });
+			const string expected = "<a href=\"M_IglooCastle.CLI.Documentation.Normalize-IglooCastle.CLI.TypeElement.html\">Normalize</a>";
+			var method = typeof(Documentation).GetMethod("Normalize", new[] { typeof(TypeElement) });
 			Assert.AreEqual(expected, _typePrinter.Print(method));
 		}
 
@@ -75,6 +75,7 @@ namespace IglooCastle.Tests
 		{
 			const string expected = "Equals";
 			var method = typeof(XmlComment).GetMethod("Equals");
+			Assert.IsNotNull(method);
 			Assert.AreEqual(expected, _typePrinter.Print(method));
 		}
 
@@ -103,7 +104,7 @@ namespace IglooCastle.Tests
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(TypeElement));
 			PropertyElement targetProperty = targetTypeElement.Properties.Single(p => p.Name == "Properties");
 
-			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.Member.PropertyType));
+			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.PropertyType));
 		}
 
 		[Test]
@@ -114,7 +115,7 @@ namespace IglooCastle.Tests
 			TypeElement targetTypeElement = _documentation.Types.Single(t => t.Member == typeof(IXmlComment));
 			PropertyElement targetProperty = targetTypeElement.Properties.Single(p => p.Name == "InnerText");
 
-			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.Member.PropertyType));
+			Assert.AreEqual(expected, _typePrinter.Print(targetProperty.PropertyType));
 		}
 
 		[Test]

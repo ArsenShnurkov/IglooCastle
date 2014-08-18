@@ -55,8 +55,7 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestReturns()
 		{
-			MethodInfo method = typeof(ReflectedElement<>).GetMethod("GetCustomAttributes");
-			var xmlComment = _documentation.Find(method).XmlComment;
+			var xmlComment = _documentation.Types.Single(t => t.Member == typeof(ReflectedElement<>)).Methods.Single(m => m.Name == "GetCustomAttributes").XmlComment;
 			Assert.AreEqual(
 				"A collection of <a href=\"http://msdn.microsoft.com/en-us/library/system.attribute%28v=vs.110%29.aspx\">Attribute</a>",
 				xmlComment.Returns());

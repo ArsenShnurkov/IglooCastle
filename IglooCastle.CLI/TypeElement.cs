@@ -52,7 +52,7 @@ namespace IglooCastle.CLI
 					return null;
 				}
 
-				baseType = Documentation.Normalize(baseType);
+				//baseType = Documentation.Normalize(baseType);
 				return Documentation.Find(baseType);
 			}
 		}
@@ -98,8 +98,13 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Documentation.Types.SelectMany(t => t.Methods).Where(m => m.IsExtension() && m.GetParameters()[0].ParameterType.IsAssignableFrom(Member)).ToList();
+				return Documentation.Types.SelectMany(t => t.Methods).Where(m => m.IsExtension() && m.GetParameters()[0].ParameterType.IsAssignableFrom(this)).ToList();
 			}
+		}
+
+		public bool IsAssignableFrom(TypeElement t)
+		{
+			return Member.IsAssignableFrom(t.Member);
 		}
 
 		public ICollection<EnumMemberElement> EnumMembers
@@ -127,9 +132,16 @@ namespace IglooCastle.CLI
 				).ToList();
 		}
 
-		public Type[] GetGenericArguments()
+		public bool IsGenericType
 		{
-			return Member.GetGenericArguments();
+			get { return Member.IsGenericType; }
+		}
+
+		public string Namespace { get { return Member.Namespace; } }
+
+		public TypeElement[] GetGenericArguments()
+		{
+			return Member.GetGenericArguments().Select(t => Documentation.Find(t)).ToArray();
 		}
 
 		public bool HasBaseType(TypeElement typeElement)
@@ -196,6 +208,36 @@ namespace IglooCastle.CLI
 		protected override IXmlComment GetXmlComment()
 		{
 			return Documentation.GetXmlComment("//member[@name=\"T:" + Type.FullName + "\"]");
+		}
+
+		public bool IsArray { get { return Member.IsArray; } }
+
+		public TypeElement GetElementType()
+		{
+			return Documentation.Find(Member.GetElementType());
+		}
+
+		public bool IsByRef { get { return Member.IsByRef; } }
+
+		public bool IsGenericParameter { get { return Member.IsGenericParameter; } }
+
+		public bool IsGenericTypeDefinition { get { return Member.IsGenericTypeDefinition; } }
+
+		public TypeElement GetGenericTypeDefinition()
+		{
+			return Documentation.Find(Member.GetGenericTypeDefinition());
+		}
+
+		public bool IsNested { get { return Member.IsNested; } }
+
+		public TypeElement[] GetNestedTypes()
+		{
+			return Member.GetNestedTypes().Select(t => Documentation.Find(t)).ToArray();
+		}
+
+		internal MethodElement Find(MethodInfo method)
+		{
+			return Methods.SingleOrDefault(m => m.Member == method);
 		}
 	}
 }

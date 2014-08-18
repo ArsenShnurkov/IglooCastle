@@ -71,9 +71,9 @@ namespace IglooCastle.CLI
 				{
 					string cref = node.Attributes["cref"].Value;
 					object resolvedCref = ResolveCref(cref);
-					if (resolvedCref is Type)
+					if (resolvedCref is TypeElement)
 					{
-						return _documentation.TypePrinter.Print((Type)resolvedCref);
+						return _documentation.TypePrinter.Print((TypeElement)resolvedCref);
 					}
 
 					return string.Format("<code>{0}</code>", cref);
@@ -94,9 +94,9 @@ namespace IglooCastle.CLI
 			throw new NotImplementedException();
 		}
 
-		private Type ResolveTypeCref(string typeName)
+		private TypeElement ResolveTypeCref(string typeName)
 		{
-			return Type.GetType(typeName, false);
+			return _documentation.Find(Type.GetType(typeName, false));
 		}
 	}
 }

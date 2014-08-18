@@ -94,32 +94,19 @@ namespace IglooCastle.CLI
 
 		public bool IsLocalType(TypeElement type)
 		{
-			return true;
-		}
-
-		public bool IsLocalType(Type type)
-		{
-			Type normalizedType = Normalize(type);
+			var normalizedType = Normalize(type);
 			if (normalizedType.IsGenericParameter)
 			{
 				return false;
 			}
 
-			return Types.Any(t => t.Type == normalizedType);
+			return Types.Any(t => t.Type == normalizedType.Type);
 		}
 
 		/// <summary>
 		/// Normalizes the given type element.
 		/// </summary>
 		public TypeElement Normalize(TypeElement type)
-		{
-			return type;
-		}
-
-		/// <summary>
-		/// Normalizes the given type.
-		/// </summary>
-		public Type Normalize(Type type)
 		{
 			if (type.IsGenericType && !type.IsGenericTypeDefinition)
 			{
@@ -182,9 +169,15 @@ namespace IglooCastle.CLI
 			return true;
 		}
 
-		public MethodElement Find(MethodInfo method)
+		internal MethodElement Find(MethodInfo method)
 		{
-			return Types.SelectMany(t => t.Methods).Single(m => m.Member == method);
+			if (method == null)
+			{
+				throw new ArgumentNullException("method", "Method cannot be null");
+			}
+
+			var type = Find(method.ReflectedType);
+			return type.Find(method);
 		}
 
 		internal PropertyElement Find(PropertyInfo propertyInfo)
