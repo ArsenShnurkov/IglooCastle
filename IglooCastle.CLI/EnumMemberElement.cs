@@ -25,7 +25,7 @@ namespace IglooCastle.CLI
 		protected override IXmlComment GetXmlComment()
 		{
 			return Documentation.GetXmlComment("//member[@name=\"F:" +
-					OwnerType.FullName + "." +
+					OwnerType.Member.FullName + "." +
 					Member.Name + "\"]");
 		}
 	}

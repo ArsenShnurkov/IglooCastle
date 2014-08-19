@@ -286,7 +286,7 @@ class NavigationTypeNode(NavigationNode):
 		return self.filename_provider.Filename(self.type_element)
 
 	def text(self):
-		return self.type_element.ShortName + " " + self.type_element.TypeKind
+		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
 
 	def children(self):
 		result = []
@@ -306,11 +306,11 @@ class NavigationTypeNode(NavigationNode):
 		return result
 
 	def contents_html_template(self):
-		print "Generating page for type %s" % self.type_element.FullName
+		print "Generating page for type %s" % self.type_element.ToString("f")
 		type_kind            = self.type_element.TypeKind
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s %s" % (self.type_element.FullName, type_kind)
-		html_template.h1     = "%s %s" % (self.type_element.ShortName, type_kind)
+		html_template.title  = "%s %s" % (self.type_element.ToString("f"), type_kind)
+		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), type_kind)
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
@@ -330,7 +330,7 @@ class NavigationTypeNode(NavigationNode):
 	def constructors_section(self):
 
 		def constructor_list_item(constructor):
-			return "<li>%s(%s)</li>" % ( self.type_element.ShortName, self.format_parameters(constructor) )
+			return "<li>%s(%s)</li>" % ( self.type_element.ToString("s"), self.format_parameters(constructor) )
 
 		return HtmlTemplate.fmt_non_empty(
 			"<h2>Constructors</h2><ul>%s</ul>",
@@ -338,7 +338,9 @@ class NavigationTypeNode(NavigationNode):
 
 	def base_type_section(self):
 		base_type = self.type_element.BaseType
-		if not base_type or base_type.FullName == "System.Object":
+
+		# check if we're documenting System.Object or a class deriving directly from System.Object
+		if not base_type or not base_type.BaseType:
 			return ""
 
 		return "<p>Inherits from %s</p>" % self.type_printer().Print(base_type)
@@ -431,15 +433,15 @@ class NavigationEnumNode(NavigationNode):
 		return self.filename_provider.Filename(self.type_element)
 
 	def text(self):
-		return self.type_element.ShortName + " " + self.type_element.TypeKind
+		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
 
 	def contents_html_template(self):
-		print "Generating page for enum %s" % self.type_element.FullName
+		print "Generating page for enum %s" % self.type_element.ToString("f")
 		type_kind            = self.type_element.TypeKind
 		has_flags            = self.type_element.HasAttribute("System.FlagsAttribute")
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s %s" % (self.type_element.FullName, type_kind)
-		html_template.h1     = "%s %s" % (self.type_element.ShortName, type_kind)
+		html_template.title  = "%s %s" % (self.type_element.ToString("f"), type_kind)
+		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), type_kind)
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary())
@@ -490,8 +492,8 @@ class NavigationPropertiesNode(NavigationNode):
 
 	def contents_html_template(self):
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s Properties" % self.type_element.FullName
-		html_template.h1     = "%s Properties" % self.type_element.ShortName
+		html_template.title  = "%s Properties" % self.type_element.ToString("f")
+		html_template.h1     = "%s Properties" % self.type_element.ToString("s")
 		html_template.main   = HtmlTemplate.fmt_non_empty(
 			"""
 			<h2>Properties</h2>
@@ -525,8 +527,8 @@ class NavigationMethodsNode(NavigationNode):
 
 	def contents_html_template(self):
 		html_template        = HtmlTemplate()
-		html_template.title  = "%s Methods" % self.type_element.FullName
-		html_template.h1     = "%s Methods" % self.type_element.ShortName
+		html_template.title  = "%s Methods" % self.type_element.ToString("f")
+		html_template.h1     = "%s Methods" % self.type_element.ToString("s")
 		html_template.main   = HtmlTemplate.fmt_non_empty(
 			"""
 			<h2>Methods</h2>
@@ -597,7 +599,7 @@ class NavigationPropertyNode(NavigationNode):
 		property_name = self.property_element.Name
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
-		html_template.h1     = "%s.%s %s" % (self.property_element.OwnerType.ShortName, property_name, "Property")
+		html_template.h1     = "%s.%s %s" % (self.property_element.OwnerType.ToString("s"), property_name, "Property")
 		html_template.main   = HtmlTemplate.fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>
@@ -629,11 +631,12 @@ class NavigationMethodNode(NavigationNode):
 		method_name = self.method_element.Name
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (method_name, "Method")
-		html_template.h1     = "%s.%s %s" % (self.method_element.OwnerType.ShortName, method_name, "Method")
+		html_template.h1     = "%s.%s %s" % (self.method_element.OwnerType.ToString("s"), method_name, "Method")
 		html_template.main   = self.__summary_section() + \
 			self.__syntax_section() + \
 			self.__exceptions_section() + \
 			self.__remarks_section() + \
+			self.__example_section() + \
 			self.__see_also_section()
 
 		return html_template
@@ -690,7 +693,10 @@ class NavigationMethodNode(NavigationNode):
 		return ""
 
 	def __remarks_section(self):
-		return ""
+		return self.method_element.XmlComment.Section("remarks")
+
+	def __example_section(self):
+		return self.method_element.XmlComment.Section("example")
 
 	def __see_also_section(self):
 		return ""

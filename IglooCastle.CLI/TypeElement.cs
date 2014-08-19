@@ -5,11 +5,6 @@ using System.Reflection;
 
 namespace IglooCastle.CLI
 {
-	public class ExternalTypeElement : TypeElement
-	{
-		public ExternalTypeElement(Documentation owner, Type type) : base(owner, type) { }
-	}
-
 	public class TypeElement : ReflectedElement<Type>
 	{
 		public TypeElement(Documentation owner, Type type)
@@ -52,7 +47,6 @@ namespace IglooCastle.CLI
 					return null;
 				}
 
-				//baseType = Documentation.Normalize(baseType);
 				return Documentation.Find(baseType);
 			}
 		}
@@ -111,7 +105,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Type.IsEnum ? 
+				return Type.IsEnum ?
 					Enum.GetNames(Type).Select(n => new EnumMemberElement(Documentation, this, n)).ToList()
 					: new List<EnumMemberElement>(0);
 			}
@@ -160,20 +154,57 @@ namespace IglooCastle.CLI
 			return baseTypeElement != null;
 		}
 
-		public string ShortName
+		public override string ToString()
 		{
-			get
-			{
-				return Documentation.TypePrinter.Name(this, TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments);
-			}
+			return ToString(null);
 		}
 
-		public string FullName
+		/// <summary>
+		/// Uses <see cref="TypePrinter" /> to print this type's name.
+		/// </summary>
+		/// <param name="format">Controls the output options. See remarks section.</param>
+		/// <returns>A string representing this type element.</returns>
+		/// <remarks>
+		/// 	<paramref name="format" /> can be:
+		/// 	<list type="table">
+		/// 		<listheader>
+		/// 			<term>Value</term>
+		/// 			<description>Output</description>
+		/// 		</listheader>
+		/// 		<item>
+		/// 			<term><c>null</c></term>
+		/// 			<description>The containing type's ToString method is called as-is.</description>
+		/// 		</item>
+		/// 		<item>
+		/// 			<term><c>"s"</c></term>
+		/// 			<description>The short name is returned (without namespace).</description>
+		/// 		</item>
+		/// 		<item>
+		/// 			<term><c>"f"</c></term>
+		/// 			<description>The full name is returned (with namespace).</description>
+		/// 		</item>
+		/// 	</list>
+		/// </remarks>
+		/// <example>
+		/// 	This example prints the full name of a type element:
+		/// 	<code>
+		/// 	Console.WriteLine(typeElement.ToString("f"));
+		/// 	</code>
+		/// </example>
+		public string ToString(string format)
 		{
-			get
+			if (format == null)
 			{
-				return Documentation.TypePrinter.Name(this, TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments | TypePrinter.NameComponents.Namespace);
+				return Member.ToString();
 			}
+
+			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments;
+			if (format == "f")
+			{
+				nameComponents = nameComponents | TypePrinter.NameComponents.Namespace;
+			}
+
+			return Documentation.TypePrinter.Name(this, nameComponents);
 		}
 
 		public string TypeKind

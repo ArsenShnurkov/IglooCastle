@@ -32,5 +32,31 @@ namespace IglooCastle.CLI
 		{
 			get { return _documentation; }
 		}
+
+		public override bool Equals(object o)
+		{
+			if (ReferenceEquals(o, null))
+			{
+				return false;
+			}
+
+			if (ReferenceEquals(o, this))
+			{
+				return true;
+			}
+
+			if (o.GetType() != GetType())
+			{
+				return false;
+			}
+
+			DocumentationElement<TMember> that = (DocumentationElement<TMember>)o;
+			return Member.Equals(that.Member);
+		}
+
+		public override int GetHashCode()
+		{
+			return Member.GetHashCode();
+		}
 	}
 }

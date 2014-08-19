@@ -58,7 +58,7 @@ namespace IglooCastle.CLI
 				return _documentationSources;
 			}
 
-			private set 
+			private set
 			{
 				_documentationSources.Clear();
 				_documentationSources.AddRange(value ?? Enumerable.Empty<XmlDocument>());
@@ -185,9 +185,9 @@ namespace IglooCastle.CLI
 			return Types.SelectMany(t => t.Properties).SingleOrDefault(p => p.Property == propertyInfo);
 		}
 
-		internal TypeElement Find(Type baseType)
+		internal TypeElement Find(Type type)
 		{
-			return Types.FirstOrDefault(t => t.Type == baseType) ?? new ExternalTypeElement(this, baseType);
+			return Types.FirstOrDefault(t => t.Type == type) ?? new TypeElement(this, type);
 		}
 	}
 }

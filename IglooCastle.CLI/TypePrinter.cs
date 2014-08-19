@@ -34,7 +34,16 @@ namespace IglooCastle.CLI
 				return Print(type.GetElementType());
 			}
 
-			string result = DoPrint(type);
+			string result;
+
+			if (type.IsGenericType && !type.IsGenericParameter && !type.IsGenericTypeDefinition)
+			{
+				result = DoPrint(type.GetGenericTypeDefinition());
+			}
+			else
+			{
+				result = DoPrint(type);
+			}
 
 			if (type.IsGenericType)
 			{
@@ -78,12 +87,17 @@ namespace IglooCastle.CLI
 
 		private string FullName(TypeElement type)
 		{
-			if (type.IsGenericType)
+			if (type.IsGenericParameter)
 			{
-				return type.FullName.Split('`')[0];
+				return type.Name;
 			}
 
-			return SystemTypes.Alias(type) ?? type.FullName ?? ShortName(type);
+			if (type.IsGenericType)
+			{
+				return type.Member.FullName.Split('`')[0];
+			}
+
+			return SystemTypes.Alias(type) ?? type.Member.FullName ?? ShortName(type);
 		}
 
 		private string ShortName(TypeElement type)
@@ -116,7 +130,7 @@ namespace IglooCastle.CLI
 
 			if (IsSystemType(type) && !type.IsGenericType)
 			{
-				return string.Format("http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx", type.FullName.ToLowerInvariant());
+				return string.Format("http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx", type.Member.FullName.ToLowerInvariant());
 			}
 
 			return null;
@@ -327,7 +341,7 @@ namespace IglooCastle.CLI
 			result += parameterInfo.Name;
 			return result;
 		}
-		
+
 		[Obsolete]
 		public string Syntax(PropertyInfo property)
 		{
@@ -342,7 +356,6 @@ namespace IglooCastle.CLI
 			var getterAccess = getter != null ? getter.GetAccess() : MethodAttributes.PrivateScope;
 			var setterAccess = setter != null ? setter.GetAccess() : MethodAttributes.PrivateScope;
 			var maxAccess = ReflectionExtensions.Max(getterAccess, setterAccess);
-
 
 			return Join(
 				Access(maxAccess),
