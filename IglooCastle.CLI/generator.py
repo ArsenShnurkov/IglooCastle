@@ -92,10 +92,10 @@ class NavigationNode:
 			child.visit(f)
 
 	def href(self):
-		raise ValueError('You need to override href()')
+		raise NotImplementedError('You need to override href()')
 
 	def text(self):
-		raise ValueError('You need to override text()')
+		raise NotImplementedError('You need to override text()')
 
 	def children(self):
 		return []
@@ -165,7 +165,7 @@ class NavigationNode:
 			</table>""",
 			"".join(property_list_item(p) for p in properties))
 
-	def method_table(self, methods):
+	def methods_table(self, methods):
 		"""Prints a table with the given methods."""
 
 		def method_list_item(method_element):
@@ -383,14 +383,14 @@ class NavigationTypeNode(NavigationNode):
 				Protected
 			</div>
 			%s
-			""", self.method_table(self.type_element.Methods))
+			""", self.methods_table(self.type_element.Methods))
 
 	def extension_methods_section(self):
 		return HtmlTemplate.fmt_non_empty(
 			"""
 			<h2>Extension Methods</h2>
 			%s
-			""", self.method_table(self.type_element.ExtensionMethods))
+			""", self.methods_table(self.type_element.ExtensionMethods))
 
 	def documentation(self):
 		return self.type_element.Documentation
@@ -473,13 +473,42 @@ class NavigationEnumNode(NavigationNode):
 		""" % "".join(html)
 
 
-class NavigationPropertiesNode(NavigationNode):
+class NavigationTypeMembersNode(NavigationNode):
 	def __init__(self, type_element):
 		NavigationNode.__init__(self)
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.type_element, "Properties")
+		return self.filename_provider.Filename(self.type_element, self.text())
+
+	def text(self):
+		raise NotImplementedError("override me")
+
+	def documentation(self):
+		return self.type_element.Documentation
+
+	def contents_html_template(self):
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s %s" % (self.type_element.ToString("f"), self.text())
+		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), self.text())
+		html_template.main   = HtmlTemplate.fmt_non_empty(
+			"""
+			<div>
+				Show:
+				<input type="checkbox" checked="checked" class="js-show-inherited" />
+				Inherited
+			</div>
+			%s
+			""", self.main_html_table())
+
+		return html_template
+
+	def main_html_table(self):
+		raise NotImplementedError("override me")
+
+class NavigationPropertiesNode(NavigationTypeMembersNode):
+	def __init__(self, type_element):
+		NavigationTypeMembersNode.__init__(self, type_element)
 
 	def text(self):
 		return "Properties"
@@ -487,34 +516,12 @@ class NavigationPropertiesNode(NavigationNode):
 	def children(self):
 		return [ NavigationPropertyNode(p) for p in self.type_element.Properties if not p.IsInherited ]
 
-	def documentation(self):
-		return self.type_element.Documentation
+	def main_html_table(self):
+		return self.properties_table(self.type_element.Properties)
 
-	def contents_html_template(self):
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s Properties" % self.type_element.ToString("f")
-		html_template.h1     = "%s Properties" % self.type_element.ToString("s")
-		html_template.main   = HtmlTemplate.fmt_non_empty(
-			"""
-			<h2>Properties</h2>
-			<div>
-				Show:
-				<input type="checkbox" checked="checked" class="js-show-inherited" />
-				Inherited
-			</div>
-			%s
-			""", self.properties_table(self.type_element.Properties))
-
-		return html_template
-
-
-class NavigationMethodsNode(NavigationNode):
+class NavigationMethodsNode(NavigationTypeMembersNode):
 	def __init__(self, type_element):
-		NavigationNode.__init__(self)
-		self.type_element = type_element
-
-	def href(self):
-		return self.filename_provider.Filename(self.type_element, "Methods")
+		NavigationTypeMembersNode.__init__(self, type_element)
 
 	def text(self):
 		return "Methods"
@@ -522,24 +529,8 @@ class NavigationMethodsNode(NavigationNode):
 	def children(self):
 		return [ NavigationMethodNode(m) for m in self.type_element.Methods if not m.IsInherited ]
 
-	def documentation(self):
-		return self.type_element.Documentation
-
-	def contents_html_template(self):
-		html_template        = HtmlTemplate()
-		html_template.title  = "%s Methods" % self.type_element.ToString("f")
-		html_template.h1     = "%s Methods" % self.type_element.ToString("s")
-		html_template.main   = HtmlTemplate.fmt_non_empty(
-			"""
-			<h2>Methods</h2>
-			<div>
-				Show:
-				<input type="checkbox" checked="checked" class="js-show-inherited" />
-				Inherited
-			</div>
-			%s
-			""", self.method_table(self.type_element.Methods))
-		return html_template
+	def main_html_table(self):
+		return self.methods_table(self.type_element.Methods)
 
 
 class NavigationExtensionMethodsNode(NavigationNode):
@@ -576,7 +567,7 @@ class NavigationExtensionMethodsNode(NavigationNode):
 
 		for t in list(dct):
 			html_template.main += "<h2>Extension methods for %s</h2>" % self.type_printer().Print(t)
-			html_template.main += self.method_table(dct[t])
+			html_template.main += self.methods_table(dct[t])
 
 		return html_template
 
