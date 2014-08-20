@@ -23,5 +23,17 @@ namespace IglooCastle.CLI
 
 		#endregion
 
+		public TypeElement AttributeType
+		{
+			get
+			{
+				return Documentation.Find(Member.GetType());
+			}
+		}
+
+		public bool IsInstance(params Type[] types)
+		{
+			return types.Any(t => t.IsInstanceOfType(Member));
+		}
 	}
 }

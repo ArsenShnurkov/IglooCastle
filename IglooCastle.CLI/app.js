@@ -132,6 +132,6 @@ $(function() {
 	}
 
 	if (!myLocalStorage.showProtected()) {
-		$("tr.protected").hide();
+		$("tr.Family").hide();
 	}
 });

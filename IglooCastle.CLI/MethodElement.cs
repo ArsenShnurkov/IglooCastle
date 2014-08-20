@@ -16,11 +16,6 @@ namespace IglooCastle.CLI
 			get { return Member; }
 		}
 
-		public ParameterInfoElement[] GetParameters()
-		{
-			return Member.GetParameters().Select(p => new ParameterInfoElement(Documentation, p)).ToArray();
-		}
-
 		public bool IsStatic
 		{
 			get { return Member.IsStatic; }

@@ -54,9 +54,36 @@ namespace IglooCastle.CLI
 
 		private void RunGenerator(Documentation documentation)
 		{
-			var ipy = Python.CreateRuntime();
-			dynamic generator = ipy.UseFile("generator.py");
+			var engine = Python.CreateEngine();
+			string assemblyPath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+			var searchPaths = engine.GetSearchPaths();
+			searchPaths.Add(assemblyPath);
+			engine.SetSearchPaths(searchPaths);
+			dynamic generator = engine.Runtime.UseFile("generator.py");
 			generator.Generate(documentation);
+
+			string outputDirectory = Path.GetFullPath(Environment.CurrentDirectory);
+			if (assemblyPath != outputDirectory)
+			{
+				Console.WriteLine("Copying static files");
+				CopyStatic(assemblyPath, outputDirectory, "app.js", "jquery-1.11.1.min.js", "style.css");
+			}
+		}
+
+		private static void CopyStatic(string fromPath, string toPath, params string[] files)
+		{
+			foreach (string file in files)
+			{
+				CopyStatic(Path.Combine(fromPath, file), Path.Combine(toPath, file));
+			}
+		}
+
+		private static void CopyStatic(string source, string destination)
+		{
+			if (!File.Exists(destination))
+			{
+				File.Copy(source, destination);
+			}
 		}
 
 		private Documentation ProcessAssembly(string file)

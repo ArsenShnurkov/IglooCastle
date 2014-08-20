@@ -105,6 +105,9 @@ class NavigationNode:
 	def children(self):
 		return []
 
+	def is_empty(self):
+		return len(self.children()) <= 0
+
 	def children_nav_html(self):
 		return "\n".join(child.nav_html() for child in self.children())
 
@@ -210,6 +213,12 @@ class NavigationNode:
 				</tbody>
 			</table>""", "".join(method_list_item(m) for m in methods))
 
+	def append_if_not_empty(self, lst, node):
+		if not node.is_empty():
+			lst.append(node)
+
+		return lst
+
 
 class NavigationDocumentationNode(NavigationNode):
 	def __init__(self, documentation):
@@ -245,7 +254,7 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def children(self):
 		result = [ self.__type_node(t) for t in self.namespace_element.Types ]
-		result.append( NavigationExtensionMethodsNode(self.namespace_element) )
+		result = self.append_if_not_empty(result, NavigationExtensionMethodsNode(self.namespace_element) )
 		return result
 
 	def contents_html_template(self):
@@ -302,13 +311,8 @@ class NavigationTypeNode(NavigationNode):
 
 		# TODO: constructors node
 
-		n = NavigationPropertiesNode(self.type_element)
-		if len(n.children()):
-			result.append(n)
-
-		n = NavigationMethodsNode(self.type_element)
-		if len(n.children()):
-			result.append(n)
+		result = self.append_if_not_empty(result, NavigationPropertiesNode(self.type_element))
+		result = self.append_if_not_empty(result, NavigationMethodsNode(self.type_element))
 
 		# TODO: events node
 
@@ -320,16 +324,18 @@ class NavigationTypeNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), type_kind)
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), type_kind)
-		html_template.main   = fmt_non_empty("""
+		html_template.main   = "\n".join([
+			fmt_non_empty("""
 				<h2>Summary</h2>
-				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
-			self.base_type_section() + \
-			self.interfaces_section() + \
-			self.derived_types_section() + \
-			self.constructors_section() + \
-			self.properties_section() + \
-			self.methods_section() + \
+				<p>%s</p>""", self.type_element.XmlComment.Summary()),
+			self.base_type_section(),
+			self.interfaces_section(),
+			self.derived_types_section(),
+			self.constructors_section(),
+			self.properties_section(),
+			self.methods_section(),
 			self.extension_methods_section()
+		])
 
 		# TODO: operators
 		# TODO: separate attribute template?
@@ -405,16 +411,16 @@ class NavigationTypeNode(NavigationNode):
 		return self.type_element.Documentation
 
 	def exclude_attribute(self, attribute):
-		if attribute.GetType().Name == "__DynamicallyInvokableAttribute":
+		if attribute.AttributeType.Name == "__DynamicallyInvokableAttribute":
 			return True
 
-		return isinstance(attribute, (
+		return attribute.IsInstance(
 			System.Runtime.CompilerServices.ExtensionAttribute,
 			System.Runtime.TargetedPatchingOptOutAttribute,
-			System.Security.SecuritySafeCriticalAttribute))
+			System.Security.SecuritySafeCriticalAttribute)
 
 	def format_attribute(self, attribute):
-		return "[" + attribute.GetType().ToHtml() + "]"
+		return "[" + attribute.AttributeType.ToHtml() + "]"
 
 	def format_attributes(self, attributes):
 		if not attributes:
@@ -430,7 +436,10 @@ class NavigationTypeNode(NavigationNode):
 		return result
 
 	def format_parameters(self, something):
-		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
+		print "format_parameters"
+		result = ", ".join(self.format_parameter(p) for p in something.GetParameters())
+		print "/format_parameters"
+		return result
 
 
 class NavigationEnumNode(NavigationNode):
@@ -564,11 +573,14 @@ class NavigationExtensionMethodsNode(NavigationNode):
 	def documentation(self):
 		return self.namespace_element.Documentation
 
+	def is_empty(self):
+		return len(self.__get_extension_methods()) <= 0
+
 	def contents_html_template(self):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Extension Methods" % self.namespace_element.Namespace
 
-		extension_methods = [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
+		extension_methods = self.__get_extension_methods()
 		methods_by_extended_type = { }
 		for m in extension_methods:
 			extended_type = m.GetParameters()[0].ParameterType
@@ -586,6 +598,10 @@ class NavigationExtensionMethodsNode(NavigationNode):
 			html_template.main += self.methods_table(methods_by_extended_type[extended_type])
 
 		return html_template
+
+	def __get_extension_methods(self):
+		return [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
+
 
 
 class NavigationPropertyNode(NavigationNode):

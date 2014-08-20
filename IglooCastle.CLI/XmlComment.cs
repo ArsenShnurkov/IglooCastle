@@ -91,12 +91,20 @@ namespace IglooCastle.CLI
 				return ResolveTypeCref(parts[1]);
 			}
 
-			throw new NotImplementedException();
+			// TODO: implement
+			return null;
 		}
 
 		private TypeElement ResolveTypeCref(string typeName)
 		{
-			return _documentation.Find(Type.GetType(typeName, false));
+			Type resolvedType = Type.GetType(typeName, false);
+			if (resolvedType == null)
+			{
+				Console.WriteLine("Could not resolve type {0}", typeName);
+				return null;
+			}
+
+			return _documentation.Find(resolvedType);
 		}
 	}
 }
