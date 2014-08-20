@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IglooCastle.CLI
 {
-	public class FilenameProvider
+	public sealed class FilenameProvider
 	{
 		public string Filename(NamespaceElement @namespace, string prefix = "N", string suffix = "html")
 		{

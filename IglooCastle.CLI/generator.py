@@ -7,6 +7,7 @@ clr.AddReference("IglooCastle.CLI")
 import IglooCastle.CLI
 clr.ImportExtensions(IglooCastle.CLI)
 
+
 def flatten(something):
 	for x in something:
 		if isinstance(x, list):
@@ -21,6 +22,14 @@ def escape(str):
 def a(href, text):
 	return '<a href="%s">%s</a>' % (escape(href), text)
 
+def fmt_non_empty(template, contents):
+	"""Formats the contents into template, if the contents are not empty."""
+	if len(contents):
+		return template % contents
+	else:
+		return ""
+
+
 class HtmlTemplate:
 	def __init__(self):
 		self.title  = ""
@@ -29,7 +38,13 @@ class HtmlTemplate:
 		self.main   = ""
 		self.footer = ""
 
-	def render(self):
+	def write(self, file):
+		print "Writing file %s" % file
+		f = open(file, 'w')
+		f.write(self.__render())
+		f.close()
+
+	def __render(self):
 		return """
 <html>
 <head>
@@ -52,20 +67,6 @@ class HtmlTemplate:
 </body>
 </html>
 	""" % (self.title, self.nav, self.h1 or self.title, self.main, self.footer)
-
-	def write_to(self, file):
-		print "Writing file %s" % file
-		f = open(file, 'w')
-		f.write(self.render())
-		f.close()
-
-	@staticmethod
-	def fmt_non_empty(template, contents):
-		"""Formats the contents into template, if the contents are not empty."""
-		if len(contents):
-			return template % contents
-		else:
-			return ""
 
 
 class NavigationNode:
@@ -131,11 +132,14 @@ class NavigationNode:
 		"""Prints a table with the given properties."""
 
 		def property_list_item(property_element):
-			name        = property_element.Name
-			ptype       = property_element.PropertyType.ToHtml()
-			description = (property_element.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property_element)
-			link        = property_element.Filename()
-			tr_class    = " ".join(["inherited" if property_element.IsInherited else "", self.___access_css(property_element)])
+			description = " ".join([
+				property_element.XmlComment.Summary() or "&nbsp;",
+				self.inherited_from(property_element)
+			])
+			tr_class    = " ".join([
+				"inherited" if property_element.IsInherited else "",
+				self.___access_css(property_element)
+			])
 			return """
 				<tr class="%s">
 					<td>%s</td>
@@ -146,10 +150,10 @@ class NavigationNode:
 			""" % (tr_class,
 				   self.__access_str(property_element),
 				   property_element.ToHtml(),
-				   ptype,
+				   property_element.PropertyType.ToHtml(),
 				   description)
 
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"""
 			<table class="members properties">
 				<thead>
@@ -170,24 +174,28 @@ class NavigationNode:
 		"""Prints a table with the given methods."""
 
 		def method_list_item(method_element):
-			inheritedLink = self.inherited_from(method_element)
-			tr_class      = " ".join(["inherited" if method_element.IsInherited else "", self.___access_css(method_element) ])
-
+			description = " ".join([
+				method_element.XmlComment.Summary() or "&nbsp;",
+				self.inherited_from(method_element)
+			])
+			tr_class    = " ".join([
+				"inherited" if method_element.IsInherited else "",
+				self.___access_css(method_element)
+			])
 			result = """
 				<tr class="%s">
 					<td>%s</td>
 					<td>%s</td>
-					<td>%s %s</td>
+					<td>%s</td>
 				</tr>
 			""" % (tr_class,
 				   self.__access_str(method_element),
 				   method_element.ToHtml(),
-				   method_element.XmlComment.Summary() or "&nbsp;",
-				   inheritedLink)
+				   description)
 
 			return result
 
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"""
 			<table class="members methods">
 				<thead>
@@ -209,7 +217,7 @@ class NavigationDocumentationNode(NavigationNode):
 		self.documentation = documentation
 
 	def href(self):
-		return None
+		raise ValueError("You're not supposed to write the root node to disk.")
 
 	def text(self):
 		return None
@@ -242,22 +250,22 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def contents_html_template(self):
 		print "Generating page for namespace %s" % self.namespace_element.Namespace
-		html_template = HtmlTemplate()
+		html_template       = HtmlTemplate()
 		html_template.title = self.text()
 		html_template.main  = \
-			HtmlTemplate.fmt_non_empty("""
+			fmt_non_empty("""
 				<h2>Classes</h2>
 				<ol>
 					%s
 				</ol>
 				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
-			HtmlTemplate.fmt_non_empty("""
+			fmt_non_empty("""
 				<h2>Interfaces</h2>
 				<ol>
 					%s
 				</ol>
 				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
-			HtmlTemplate.fmt_non_empty("""
+			fmt_non_empty("""
 				<h2>Enumerations</h2>
 				<ol>
 					%s
@@ -312,7 +320,7 @@ class NavigationTypeNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), type_kind)
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), type_kind)
-		html_template.main   = HtmlTemplate.fmt_non_empty("""
+		html_template.main   = fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary()) + \
 			self.base_type_section() + \
@@ -333,7 +341,7 @@ class NavigationTypeNode(NavigationNode):
 		def constructor_list_item(constructor):
 			return "<li>%s(%s)</li>" % ( self.type_element.ToString("s"), self.format_parameters(constructor) )
 
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"<h2>Constructors</h2><ul>%s</ul>",
 			"".join(constructor_list_item(c) for c in self.type_element.Constructors))
 
@@ -361,7 +369,7 @@ class NavigationTypeNode(NavigationNode):
 		return "<p>Known derived types: %s</p>" % ", ".join(t.ToHtml() for t in derived_types)
 
 	def properties_section(self):
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"""
 			<h2>Properties</h2>
 			<div>
@@ -373,7 +381,7 @@ class NavigationTypeNode(NavigationNode):
 			""", self.properties_table(self.type_element.Properties))
 
 	def methods_section(self):
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"""
 			<h2>Methods</h2>
 			<div>
@@ -387,7 +395,7 @@ class NavigationTypeNode(NavigationNode):
 			""", self.methods_table(self.type_element.Methods))
 
 	def extension_methods_section(self):
-		return HtmlTemplate.fmt_non_empty(
+		return fmt_non_empty(
 			"""
 			<h2>Extension Methods</h2>
 			%s
@@ -415,14 +423,10 @@ class NavigationTypeNode(NavigationNode):
 		return "".join(self.format_attribute(a) for a in attributes if not self.exclude_attribute(a))
 
 	def format_parameter(self, parameterInfo):
-		print "format_parameter"
 		attributes = parameterInfo.GetCustomAttributes(False)
-
 		result = self.format_attributes(attributes) + \
 			parameterInfo.ParameterType.ToHtml() + \
 			" " + parameterInfo.Name
-
-		print "format_parameter"
 		return result
 
 	def format_parameters(self, something):
@@ -447,20 +451,28 @@ class NavigationEnumNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), type_kind)
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), type_kind)
-		html_template.main   = HtmlTemplate.fmt_non_empty("""
+		html_template.main   = fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary())
 
 		if has_flags:
-			html_template.main += "<p class=\"info\">This is a flags enum; its members can be combined with bitwise operators.</p>"
+			html_template.main += """
+			<p class="info">This is a flags enum;
+			its members can be combined with bitwise operators.</p>"""
 
 		html_template.main += self.__members_section()
 
 		return html_template
 
 	def __members_section(self):
-		html = [ "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % \
-			( enum_member.Name, enum_member.Value, enum_member.XmlComment.Summary() or "&nbsp;" ) for enum_member in self.type_element.EnumMembers ]
+		def fmt_enum_member(enum_member):
+			return "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+				enum_member.Name,
+				enum_member.Value,
+				enum_member.XmlComment.Summary() or "&nbsp;"
+			)
+
+		html = [ fmt_enum_member(enum_member) for enum_member in self.type_element.EnumMembers ]
 		return """
 		<h2>Members</h2>
 		<table class=\"enum_members\">
@@ -496,7 +508,7 @@ class NavigationTypeMembersNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), self.text())
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), self.text())
-		html_template.main   = HtmlTemplate.fmt_non_empty(
+		html_template.main   = fmt_non_empty(
 			"""
 			<div>
 				Show:
@@ -556,23 +568,22 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s Extension Methods" % self.namespace_element.Namespace
 
-		# todo: group per target type
 		extension_methods = [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
-		dct = { }
+		methods_by_extended_type = { }
 		for m in extension_methods:
 			extended_type = m.GetParameters()[0].ParameterType
-			lst = dct.get(extended_type)
+			lst = methods_by_extended_type.get(extended_type)
 			if lst == None:
 				lst = []
-				dct[extended_type] = lst
+				methods_by_extended_type[extended_type] = lst
 
 			lst.append(m)
 
 		html_template.main = ""
 
-		for t in list(dct):
-			html_template.main += "<h2>Extension methods for %s</h2>" % t.ToHtml()
-			html_template.main += self.methods_table(dct[t])
+		for extended_type in list(methods_by_extended_type):
+			html_template.main += "<h2>Extension methods for %s</h2>" % extended_type.ToHtml()
+			html_template.main += self.methods_table(methods_by_extended_type[extended_type])
 
 		return html_template
 
@@ -592,11 +603,11 @@ class NavigationPropertyNode(NavigationNode):
 		return self.property_element.Documentation
 
 	def contents_html_template(self):
-		property_name = self.property_element.Name
+		property_name        = self.property_element.Name
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (property_name, "Property")
 		html_template.h1     = "%s.%s %s" % (self.property_element.OwnerType.ToString("s"), property_name, "Property")
-		html_template.main   = HtmlTemplate.fmt_non_empty("""
+		html_template.main   = fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>
 				""", self.property_element.XmlComment.Summary()) + \
@@ -624,7 +635,7 @@ class NavigationMethodNode(NavigationNode):
 		return self.method_element.Documentation
 
 	def contents_html_template(self):
-		method_name = self.method_element.Name
+		method_name          = self.method_element.Name
 		html_template        = HtmlTemplate()
 		html_template.title  = "%s %s" % (method_name, "Method")
 		html_template.h1     = "%s.%s %s" % (self.method_element.OwnerType.ToString("s"), method_name, "Method")
@@ -665,15 +676,14 @@ class NavigationMethodNode(NavigationNode):
 		return result
 
 	def __parameter(self, parameter):
-		return """<li>
-		%s
-		<br />
-		Type: %s
-		%s
-		</li>""" % (parameter.Name, parameter.ParameterType.ToHtml(), self.method_element.XmlComment.Param(parameter.Name))
+		return "<li>%s<br />Type: %s %s</li>" % (
+			parameter.Name,
+			parameter.ParameterType.ToHtml(),
+			self.method_element.XmlComment.Param(parameter.Name)
+		)
 
 	def __parameters_section(self):
-		return HtmlTemplate.fmt_non_empty("""
+		return fmt_non_empty("""
 			<h3>Parameters</h3>
 			<ol>
 			%s
@@ -711,7 +721,7 @@ def make_visitor(nav, footer):
 
 		html_template.nav    = nav
 		html_template.footer = footer
-		html_template.write_to(navigation_node.href())
+		html_template.write(navigation_node.href())
 
 	return visitor
 

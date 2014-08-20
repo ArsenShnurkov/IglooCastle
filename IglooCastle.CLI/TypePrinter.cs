@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace IglooCastle.CLI
 {
-	public class TypePrinter
+	public sealed class TypePrinter
 	{
 		private readonly Documentation _documentation;
 		private readonly FilenameProvider _filenameProvider;

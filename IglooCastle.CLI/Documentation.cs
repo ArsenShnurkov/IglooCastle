@@ -32,7 +32,7 @@ namespace IglooCastle.CLI
 		/// <summary>
 		/// Gets or sets the filename provider.
 		/// </summary>
-		public FilenameProvider FilenameProvider { get; set; }
+		internal FilenameProvider FilenameProvider { get; set; }
 
 		/// <summary>
 		/// Gets or sets the type printer.
@@ -185,9 +185,9 @@ namespace IglooCastle.CLI
 			return Types.SelectMany(t => t.Properties).SingleOrDefault(p => p.Property == propertyInfo);
 		}
 
-		internal TypeElement Find(Type type)
+		public TypeElement Find(Type type)
 		{
-			return Types.FirstOrDefault(t => t.Type == type) ?? new TypeElement(this, type);
+			return Types.FirstOrDefault(t => t.Type == type) ?? new ExternalTypeElement(this, type);
 		}
 	}
 }

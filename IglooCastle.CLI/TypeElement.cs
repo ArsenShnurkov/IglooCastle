@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace IglooCastle.CLI
 {
-	public class TypeElement : ReflectedElement<Type>
+	public class TypeElement : ReflectedElement<Type>, IFormattable
 	{
 		public TypeElement(Documentation owner, Type type)
 			: base(owner, type)
@@ -191,7 +191,7 @@ namespace IglooCastle.CLI
 		/// 	Console.WriteLine(typeElement.ToString("f"));
 		/// 	</code>
 		/// </example>
-		public string ToString(string format)
+		public string ToString(string format, IFormatProvider formatProvider = null)
 		{
 			if (format == null)
 			{
@@ -246,7 +246,7 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		public string Filename(string prefix = "T")
+		public virtual string Filename(string prefix = "T")
 		{
 			return Documentation.FilenameProvider.Filename(this, prefix);
 		}
@@ -284,6 +284,18 @@ namespace IglooCastle.CLI
 		internal MethodElement Find(MethodInfo method)
 		{
 			return Methods.SingleOrDefault(m => m.Member == method);
+		}
+	}
+
+	internal sealed class ExternalTypeElement : TypeElement
+	{
+		public ExternalTypeElement(Documentation owner, Type type) : base(owner, type)
+		{
+		}
+
+		public override string Filename(string prefix = "T")
+		{
+			return null;
 		}
 	}
 }

@@ -50,6 +50,7 @@
     <Compile Include="TypePrinterTest.cs" />
     <Compile Include="XmlCommentTest.cs" />
     <Compile Include="Sample.cs" />
+    <Compile Include="DocumentationTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
