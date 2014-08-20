@@ -246,6 +246,11 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public string Filename(string prefix = "T")
+		{
+			return Documentation.FilenameProvider.Filename(this, prefix);
+		}
+
 		protected override IXmlComment GetXmlComment()
 		{
 			return Documentation.GetXmlComment("//member[@name=\"T:" + Type.FullName + "\"]");

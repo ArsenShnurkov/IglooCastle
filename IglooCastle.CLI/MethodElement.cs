@@ -69,6 +69,26 @@ namespace IglooCastle.CLI
 			return Member.IsExtension();
 		}
 
+		public string ToHtml()
+		{
+			return Documentation.TypePrinter.Print(this);
+		}
+
+		public string ToSignature()
+		{
+			return Documentation.TypePrinter.Signature(this);
+		}
+
+		public string ToSyntax()
+		{
+			return Documentation.TypePrinter.Syntax(this);
+		}
+
+		public string Filename()
+		{
+			return Documentation.FilenameProvider.Filename(this);
+		}
+
 		protected override IXmlComment GetXmlComment()
 		{
 			return Documentation.GetMethodDocumentation(OwnerType.Type, Method.Name, Method.GetParameters());

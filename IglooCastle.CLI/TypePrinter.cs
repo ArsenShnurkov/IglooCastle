@@ -184,19 +184,24 @@ namespace IglooCastle.CLI
 			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), propertyElement.Name);
 		}
 
-		public string Print(MethodElement methodInfo)
+		public string Signature(MethodElement methodInfo)
 		{
 			string text;
 			if (methodInfo.IsOverload)
 			{
-				bool isExtension = methodInfo.IsExtension();
-				text = methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select((p, index) => ((index == 0 && isExtension) ? "this " : "") + ShortName(p.ParameterType))) + ")";
+				text = methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
 			}
 			else
 			{
 				text = methodInfo.Name;
 			}
 
+			return text;
+		}
+
+		public string Print(MethodElement methodInfo)
+		{
+			string text = Signature(methodInfo);
 			string link = Link(methodInfo);
 			if (link == null)
 			{
@@ -253,20 +258,6 @@ namespace IglooCastle.CLI
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
-		public string Access(MethodAttributes access)
-		{
-			switch (access)
-			{
-				case MethodAttributes.Family:
-					return "protected";
-				case MethodAttributes.Public:
-					return "public";
-				default:
-					// TODO: more options + tests
-					return access.ToString();
-			}
-		}
-
 		private string AccessPrefix(MethodElement member)
 		{
 			if (member.ReflectedType.IsInterface)
@@ -275,7 +266,7 @@ namespace IglooCastle.CLI
 			}
 
 			MethodAttributes access = member.GetAccess();
-			return Access(access);
+			return access.ToAccessString();
 		}
 
 		private string Modifiers(MethodElement method)
@@ -358,12 +349,12 @@ namespace IglooCastle.CLI
 			var maxAccess = ReflectionExtensions.Max(getterAccess, setterAccess);
 
 			return Join(
-				Access(maxAccess),
+				maxAccess.ToAccessString(),
 				Print(property.PropertyType),
 				property.Name,
 				"{",
-				getter != null && !getter.IsPrivate ? ((getterAccess != maxAccess) ? Access(getterAccess) + " " : "") + "get;" : "",
-				setter != null && !setter.IsPrivate ? ((setterAccess != maxAccess) ? Access(setterAccess) + " " : "") + "set;" : "",
+				getter != null && !getter.IsPrivate ? ((getterAccess != maxAccess) ? getterAccess.ToAccessString() + " " : "") + "get;" : "",
+				setter != null && !setter.IsPrivate ? ((setterAccess != maxAccess) ? setterAccess.ToAccessString() + " " : "") + "set;" : "",
 				"}");
 		}
 

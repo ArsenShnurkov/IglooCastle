@@ -87,6 +87,21 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public string ToHtml()
+		{
+			return Documentation.TypePrinter.Print(this);
+		}
+
+		public string ToSyntax()
+		{
+			return Documentation.TypePrinter.Syntax(this);
+		}
+
+		public string Filename()
+		{
+			return Documentation.FilenameProvider.Filename(this);
+		}
+
 		protected override IXmlComment GetXmlComment()
 		{
 			IXmlComment result = Documentation.GetXmlComment("//member[@name=\"P:" +

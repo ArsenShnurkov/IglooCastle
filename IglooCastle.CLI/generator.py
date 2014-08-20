@@ -6,7 +6,6 @@ from time import gmtime, strftime
 clr.AddReference("IglooCastle.CLI")
 import IglooCastle.CLI
 clr.ImportExtensions(IglooCastle.CLI)
-from IglooCastle.CLI import FilenameProvider
 
 def flatten(something):
 	for x in something:
@@ -31,26 +30,27 @@ class HtmlTemplate:
 		self.footer = ""
 
 	def render(self):
-		return """<html>
-				<head>
-					<title>%s</title>
-				</head>
-				<body>
-					<!-- left side navigation -->
-					<nav>
-						%s
-					</nav>
-					<!-- main area -->
-					<section>
-						<h1>%s</h1>
-						%s
-					</section>
-					<!-- footer -->
-					<footer>
-						%s
-					</footer>
-				</body>
-			</html>
+		return """
+<html>
+<head>
+	<title>%s</title>
+</head>
+<body>
+	<!-- left side navigation -->
+	<nav>
+		%s
+	</nav>
+	<!-- main area -->
+	<section>
+		<h1>%s</h1>
+		%s
+	</section>
+	<!-- footer -->
+	<footer>
+		%s
+	</footer>
+</body>
+</html>
 	""" % (self.title, self.nav, self.h1 or self.title, self.main, self.footer)
 
 	def write_to(self, file):
@@ -70,7 +70,6 @@ class HtmlTemplate:
 
 class NavigationNode:
 	def __init__(self):
-		self.filename_provider = FilenameProvider()
 		self.EXPANDER = '<span class="js-expander">-</span>'
 		pass
 
@@ -78,7 +77,12 @@ class NavigationNode:
 		children_html = self.children_nav_html()
 		node_html     = a(self.href(), self.text())
 		if len(children_html):
-			return "<li>%s %s<ol>%s</ol></li>" % (self.EXPANDER, node_html, children_html)
+			return """<li>%s %s
+			<ol>
+			%s
+			</ol>
+			</li>
+			""" % (self.EXPANDER, node_html, children_html)
 		else:
 			return '<li class="leaf">%s</li>' % node_html
 
@@ -101,10 +105,7 @@ class NavigationNode:
 		return []
 
 	def children_nav_html(self):
-		return "".join(child.nav_html() for child in self.children())
-
-	def type_printer(self):
-		return self.documentation().TypePrinter
+		return "\n".join(child.nav_html() for child in self.children())
 
 	def inherited_from(self, member_element):
 		if not member_element.IsInherited:
@@ -118,7 +119,7 @@ class NavigationNode:
 
 	def __access_str(self, element):
 		access = element.GetAccess()
-		access_str = self.type_printer().Access(access)
+		access_str = access.ToAccessString()
 		access_str = """<span class="%s" title="%s">%s</span>""" % (access_str, access_str, access_str)
 
 		if element.IsStatic:
@@ -133,7 +134,7 @@ class NavigationNode:
 			name        = property_element.Name
 			ptype       = property_element.PropertyType.ToHtml()
 			description = (property_element.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property_element)
-			link        = self.filename_provider.Filename(property_element)
+			link        = property_element.Filename()
 			tr_class    = " ".join(["inherited" if property_element.IsInherited else "", self.___access_css(property_element)])
 			return """
 				<tr class="%s">
@@ -144,7 +145,7 @@ class NavigationNode:
 				</tr>
 			""" % (tr_class,
 				   self.__access_str(property_element),
-				   self.type_printer().Print(property_element),
+				   property_element.ToHtml(),
 				   ptype,
 				   description)
 
@@ -180,7 +181,7 @@ class NavigationNode:
 				</tr>
 			""" % (tr_class,
 				   self.__access_str(method_element),
-				   self.type_printer().Print(method_element),
+				   method_element.ToHtml(),
 				   method_element.XmlComment.Summary() or "&nbsp;",
 				   inheritedLink)
 
@@ -229,7 +230,7 @@ class NavigationNamespaceNode(NavigationNode):
 		self.namespace_element = namespace_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.namespace_element)
+		return self.namespace_element.Filename()
 
 	def text(self):
 		return self.namespace_element.Namespace + " Namespace"
@@ -283,7 +284,7 @@ class NavigationTypeNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.type_element)
+		return self.type_element.Filename()
 
 	def text(self):
 		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
@@ -434,7 +435,7 @@ class NavigationEnumNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.type_element)
+		return self.type_element.Filename()
 
 	def text(self):
 		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
@@ -483,7 +484,7 @@ class NavigationTypeMembersNode(NavigationNode):
 		self.type_element = type_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.type_element, self.text())
+		return self.type_element.Filename(prefix = self.text())
 
 	def text(self):
 		raise NotImplementedError("override me")
@@ -543,7 +544,7 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		self.namespace_element = namespace_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.namespace_element, "ExtensionMethods")
+		return self.namespace_element.Filename(prefix = "ExtensionMethods")
 
 	def text(self):
 		return "Extension Methods"
@@ -582,7 +583,7 @@ class NavigationPropertyNode(NavigationNode):
 		self.property_element = property_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.property_element)
+		return self.property_element.Filename()
 
 	def text(self):
 		return self.property_element.Name
@@ -604,7 +605,7 @@ class NavigationPropertyNode(NavigationNode):
 				<code>
 				%s
 				</code>
-				""" % self.type_printer().Syntax(self.property_element)
+				""" % self.property_element.ToSyntax()
 		return html_template
 
 
@@ -614,10 +615,10 @@ class NavigationMethodNode(NavigationNode):
 		self.method_element = method_element
 
 	def href(self):
-		return self.filename_provider.Filename(self.method_element)
+		return self.method_element.Filename()
 
 	def text(self):
-		return self.type_printer().Print(self.method_element)
+		return self.method_element.ToSignature()
 
 	def documentation(self):
 		return self.method_element.Documentation
@@ -646,11 +647,11 @@ class NavigationMethodNode(NavigationNode):
 				<dd>%s</dd>
 			</dl>
 			""" % (self.method_element.XmlComment.Summary(),
-				   self.type_printer().Print(self.method_element.NamespaceElement),
+				   self.method_element.NamespaceElement.ToHtml(),
 				   self.method_element.OwnerType.Assembly.ToString())
 
 	def __syntax_section(self):
-		syntax = self.type_printer().Syntax(self.method_element)
+		syntax = self.method_element.ToSyntax()
 
 		result = """
 			<h2>Syntax</h2>

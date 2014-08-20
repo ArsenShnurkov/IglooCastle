@@ -26,6 +26,20 @@ namespace IglooCastle.CLI
 			return Max(getterAccess, setterAccess);
 		}
 
+		public static string ToAccessString(this MethodAttributes access)
+		{
+			switch (access)
+			{
+				case MethodAttributes.Family:
+					return "protected";
+				case MethodAttributes.Public:
+					return "public";
+				default:
+					// TODO: more options + tests
+					return access.ToString();
+			}
+		}
+
 		public static MethodAttributes Max(MethodAttributes a, MethodAttributes b)
 		{
 			if (a == b)

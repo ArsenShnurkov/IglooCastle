@@ -29,6 +29,11 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		public string ToHtml()
+		{
+			return Documentation.TypePrinter.Print(this);
+		}
+
 		/// <summary>
 		/// Gets the types of the documentation that belong to this namespace.
 		/// </summary>
@@ -43,6 +48,11 @@ namespace IglooCastle.CLI
 			{
 				return Documentation.Types.SelectMany(m => m.Methods).ToList();
 			}
+		}
+
+		public string Filename(string prefix = "N")
+		{
+			return Documentation.FilenameProvider.Filename(this, prefix);
 		}
 	}
 }
