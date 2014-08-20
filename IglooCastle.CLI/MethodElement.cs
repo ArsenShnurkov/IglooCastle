@@ -74,41 +74,4 @@ namespace IglooCastle.CLI
 			return Documentation.GetMethodDocumentation(OwnerType.Type, Method.Name, Method.GetParameters());
 		}
 	}
-
-	public class ParameterInfoElement : DocumentationElement<ParameterInfo>
-	{
-		public ParameterInfoElement(Documentation documentation, ParameterInfo parameterInfo)
-			: base(documentation, parameterInfo)
-		{
-		}
-
-		public override IXmlComment XmlComment
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public bool IsOut
-		{
-			get
-			{
-				return Member.IsOut;
-			}
-		}
-
-		public string Name
-		{
-			get
-			{
-				return Member.Name;
-			}
-		}
-
-		public TypeElement ParameterType
-		{
-			get
-			{
-				return Documentation.Find(Member.ParameterType);
-			}
-		}
-	}
 }

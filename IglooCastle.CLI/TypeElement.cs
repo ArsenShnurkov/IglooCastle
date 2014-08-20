@@ -111,9 +111,9 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		public Type[] GetInterfaces()
+		public TypeElement[] GetInterfaces()
 		{
-			return Member.GetInterfaces();
+			return Member.GetInterfaces().Select(t => Documentation.Find(t)).ToArray();
 		}
 
 		public ICollection<TypeElement> GetDerivedTypes()
@@ -198,6 +198,11 @@ namespace IglooCastle.CLI
 				return Member.ToString();
 			}
 
+			if (format == "l")
+			{
+				return Documentation.TypePrinter.Print(this);
+			}
+
 			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments;
 			if (format == "f")
 			{
@@ -205,6 +210,11 @@ namespace IglooCastle.CLI
 			}
 
 			return Documentation.TypePrinter.Name(this, nameComponents);
+		}
+
+		public string ToHtml()
+		{
+			return ToString("l");
 		}
 
 		public string TypeKind

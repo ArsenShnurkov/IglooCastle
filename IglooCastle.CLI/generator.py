@@ -110,7 +110,7 @@ class NavigationNode:
 		if not member_element.IsInherited:
 			inherited_link = ""
 		else:
-			inherited_link = "(Inherited from %s.)" % self.type_printer().Print(member_element.DeclaringType)
+			inherited_link = "(Inherited from %s.)" % member_element.DeclaringType.ToHtml()
 		return inherited_link
 
 	def ___access_css(self, element):
@@ -131,7 +131,7 @@ class NavigationNode:
 
 		def property_list_item(property_element):
 			name        = property_element.Name
-			ptype       = self.type_printer().Print(property_element.PropertyType)
+			ptype       = property_element.PropertyType.ToHtml()
 			description = (property_element.XmlComment.Summary() or "&nbsp;") + " " + self.inherited_from(property_element)
 			link        = self.filename_provider.Filename(property_element)
 			tr_class    = " ".join(["inherited" if property_element.IsInherited else "", self.___access_css(property_element)])
@@ -249,19 +249,19 @@ class NavigationNamespaceNode(NavigationNode):
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
+				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
 			HtmlTemplate.fmt_non_empty("""
 				<h2>Interfaces</h2>
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
+				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
 			HtmlTemplate.fmt_non_empty("""
 				<h2>Enumerations</h2>
 				<ol>
 					%s
 				</ol>
-				""", "".join("<li>" + self.type_printer().Print(t) + "</li>" for t in self.namespace_element.Types if t.IsEnum))
+				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsEnum))
 
 		# TODO: delegates
 
@@ -343,21 +343,21 @@ class NavigationTypeNode(NavigationNode):
 		if not base_type or not base_type.BaseType:
 			return ""
 
-		return "<p>Inherits from %s</p>" % self.type_printer().Print(base_type)
+		return "<p>Inherits from %s</p>" % base_type.ToHtml()
 
 	def interfaces_section(self):
 		interfaces = self.type_element.GetInterfaces()
 		if not interfaces:
 			return ""
 
-		return "<p>Implements interfaces: %s</p>" % ", ".join(self.type_printer().Print(t) for t in interfaces)
+		return "<p>Implements interfaces: %s</p>" % ", ".join(t.ToHtml() for t in interfaces)
 
 	def derived_types_section(self):
 		derived_types = self.type_element.GetDerivedTypes()
 		if not derived_types:
 			return ""
 
-		return "<p>Known derived types: %s</p>" % ", ".join(self.type_printer().Print(t) for t in derived_types)
+		return "<p>Known derived types: %s</p>" % ", ".join(t.ToHtml() for t in derived_types)
 
 	def properties_section(self):
 		return HtmlTemplate.fmt_non_empty(
@@ -405,7 +405,7 @@ class NavigationTypeNode(NavigationNode):
 			System.Security.SecuritySafeCriticalAttribute))
 
 	def format_attribute(self, attribute):
-		return "[" + self.type_printer().Print(attribute.GetType()) + "]"
+		return "[" + attribute.GetType().ToHtml() + "]"
 
 	def format_attributes(self, attributes):
 		if not attributes:
@@ -414,11 +414,15 @@ class NavigationTypeNode(NavigationNode):
 		return "".join(self.format_attribute(a) for a in attributes if not self.exclude_attribute(a))
 
 	def format_parameter(self, parameterInfo):
+		print "format_parameter"
 		attributes = parameterInfo.GetCustomAttributes(False)
 
-		return self.format_attributes(attributes) + \
-			self.type_printer().Print(parameterInfo.ParameterType) + \
+		result = self.format_attributes(attributes) + \
+			parameterInfo.ParameterType.ToHtml() + \
 			" " + parameterInfo.Name
+
+		print "format_parameter"
+		return result
 
 	def format_parameters(self, something):
 		return ", ".join(self.format_parameter(p) for p in something.GetParameters())
@@ -566,7 +570,7 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		html_template.main = ""
 
 		for t in list(dct):
-			html_template.main += "<h2>Extension methods for %s</h2>" % self.type_printer().Print(t)
+			html_template.main += "<h2>Extension methods for %s</h2>" % t.ToHtml()
 			html_template.main += self.methods_table(dct[t])
 
 		return html_template
@@ -641,7 +645,9 @@ class NavigationMethodNode(NavigationNode):
 				<dt>Assembly</dt>
 				<dd>%s</dd>
 			</dl>
-			""" % (self.method_element.XmlComment.Summary(), self.type_printer().Print(self.method_element.NamespaceElement), self.method_element.OwnerType.Assembly.ToString())
+			""" % (self.method_element.XmlComment.Summary(),
+				   self.type_printer().Print(self.method_element.NamespaceElement),
+				   self.method_element.OwnerType.Assembly.ToString())
 
 	def __syntax_section(self):
 		syntax = self.type_printer().Syntax(self.method_element)
@@ -663,7 +669,7 @@ class NavigationMethodNode(NavigationNode):
 		<br />
 		Type: %s
 		%s
-		</li>""" % (parameter.Name, self.type_printer().Print(parameter.ParameterType), self.method_element.XmlComment.Param(parameter.Name))
+		</li>""" % (parameter.Name, parameter.ParameterType.ToHtml(), self.method_element.XmlComment.Param(parameter.Name))
 
 	def __parameters_section(self):
 		return HtmlTemplate.fmt_non_empty("""
@@ -678,7 +684,7 @@ class NavigationMethodNode(NavigationNode):
 		<h3>Return Value</h3>
 		<p>Type: %s</p>
 		<p>%s</p>
-		""" % (self.type_printer().Print(self.method_element.ReturnType), self.method_element.XmlComment.Section("returns"))
+		""" % (self.method_element.ReturnType.ToHtml(), self.method_element.XmlComment.Section("returns"))
 
 	def __exceptions_section(self):
 		return ""

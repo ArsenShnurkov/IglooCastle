@@ -38,9 +38,10 @@ namespace IglooCastle.CLI
 			return Member.GetCustomAttributes().Any(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
 		}
 
-		public Attribute GetAttribute(string attributeName)
+		public AttributeElement GetAttribute(string attributeName)
 		{
-			return Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
+			var attribute = Member.GetCustomAttributes().FirstOrDefault(a => a.GetType().FullName == attributeName || a.GetType().FullName == attributeName + "Attribute");
+			return attribute == null ? null : new AttributeElement(Documentation, attribute);
 		}
 
 		/// <summary>
@@ -48,9 +49,9 @@ namespace IglooCastle.CLI
 		/// </summary>
 		/// <param name="inherit">Determines if inherited attributes should be returned also.</param>
 		/// <returns>A collection of <see cref="System.Attribute"/></returns>
-		public IEnumerable<Attribute> GetCustomAttributes(bool inherit)
+		public IEnumerable<AttributeElement> GetCustomAttributes(bool inherit)
 		{
-			return Member.GetCustomAttributes(inherit).Cast<Attribute>();
+			return Member.GetCustomAttributes(inherit).Cast<Attribute>().Select(a => new AttributeElement(Documentation, a));
 		}
 
 		protected abstract IXmlComment GetXmlComment();

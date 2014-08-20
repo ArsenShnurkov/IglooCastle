@@ -9,14 +9,6 @@ using System.Threading.Tasks;
 
 namespace IglooCastle.Tests
 {
-	public sealed class Sample : IEquatable<Sample>
-	{
-		public bool Equals(Sample other)
-		{
-			throw new NotImplementedException();
-		}
-	}
-
 	[TestFixture]
 	public class TypePrinterTest
 	{

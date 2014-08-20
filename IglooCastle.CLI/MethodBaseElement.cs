@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Linq;
+using System.Reflection;
 
 namespace IglooCastle.CLI
 {
@@ -10,9 +12,9 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public ParameterInfo[] GetParameters()
+		public ParameterInfoElement[] GetParameters()
 		{
-			return Member.GetParameters();
+			return Member.GetParameters().Select(p => new ParameterInfoElement(Documentation, p)).ToArray();
 		}
 	}
 }

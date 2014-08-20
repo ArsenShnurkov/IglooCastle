@@ -49,13 +49,14 @@
     <Compile Include="ReflectionExtensionsTest.cs" />
     <Compile Include="TypePrinterTest.cs" />
     <Compile Include="XmlCommentTest.cs" />
+    <Compile Include="Sample.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IglooCastle.CLI\IglooCastle.CLI.csproj">
-      <Project>{2b71a393-5b61-494f-b982-e76231739ad5}</Project>
+      <Project>{2B71A393-5B61-494F-B982-E76231739AD5}</Project>
       <Name>IglooCastle.CLI</Name>
     </ProjectReference>
   </ItemGroup>

@@ -92,6 +92,8 @@
     <Compile Include="TypePrinter.cs" />
     <Compile Include="XmlComment.cs" />
     <Compile Include="XmlCommentExtensions.cs" />
+    <Compile Include="ParameterInfoElement.cs" />
+    <Compile Include="AttributeElement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
