@@ -45,8 +45,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FilenameProviderTest.cs" />
+    <Compile Include="NamespaceElementTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReflectionExtensionsTest.cs" />
+    <Compile Include="TypeElementTest.cs" />
     <Compile Include="TypePrinterTest.cs" />
     <Compile Include="XmlCommentTest.cs" />
     <Compile Include="Sample.cs" />

@@ -189,5 +189,10 @@ namespace IglooCastle.CLI
 		{
 			return Types.FirstOrDefault(t => t.Type == type) ?? new ExternalTypeElement(this, type);
 		}
+
+		public NamespaceElement FindNamespace(string name)
+		{
+			return Namespaces.FirstOrDefault(n => n.Member == name);
+		}
 	}
 }
