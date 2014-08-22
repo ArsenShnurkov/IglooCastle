@@ -58,7 +58,7 @@ namespace IglooCastle.CLI
 
 		#region IFormattable implementation
 
-		public string ToString(string format, IFormatProvider formatProvider = null)
+		public override string ToString(string format, IFormatProvider formatProvider)
 		{
 			if (format == "h")
 			{

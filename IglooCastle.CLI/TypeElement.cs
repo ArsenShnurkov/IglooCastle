@@ -154,11 +154,6 @@ namespace IglooCastle.CLI
 			return baseTypeElement != null;
 		}
 
-		public override string ToString()
-		{
-			return ToString(null);
-		}
-
 		/// <summary>
 		/// Uses <see cref="TypePrinter" /> to print this type's name.
 		/// </summary>
@@ -191,7 +186,7 @@ namespace IglooCastle.CLI
 		/// 	Console.WriteLine(typeElement.ToString("f"));
 		/// 	</code>
 		/// </example>
-		public string ToString(string format, IFormatProvider formatProvider = null)
+		public override string ToString(string format, IFormatProvider formatProvider)
 		{
 			if (format == null)
 			{
@@ -284,6 +279,12 @@ namespace IglooCastle.CLI
 		internal MethodElement Find(MethodInfo method)
 		{
 			return Methods.SingleOrDefault(m => m.Member == method);
+		}
+
+		public MethodElement FindMethod(string methodName, Type[] parameterTypes)
+		{
+			return Methods.Where(m => m.Name == methodName 
+				&& m.GetParameters().Select(p => p.ParameterType.Member).SequenceEqual(parameterTypes)).SingleOrDefault();
 		}
 	}
 

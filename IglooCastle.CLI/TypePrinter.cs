@@ -22,7 +22,7 @@ namespace IglooCastle.CLI
 			return Print(_documentation.Find(type));
 		}
 
-		public string Print(TypeElement type)
+		public string Print(TypeElement type, bool typeLinks = true)
 		{
 			if (type.IsArray)
 			{
@@ -38,11 +38,11 @@ namespace IglooCastle.CLI
 
 			if (type.IsGenericType && !type.IsGenericParameter && !type.IsGenericTypeDefinition)
 			{
-				result = DoPrint(type.GetGenericTypeDefinition());
+				result = DoPrint(type.GetGenericTypeDefinition(), typeLinks);
 			}
 			else
 			{
-				result = DoPrint(type);
+				result = DoPrint(type, typeLinks);
 			}
 
 			if (type.IsGenericType)
@@ -55,11 +55,11 @@ namespace IglooCastle.CLI
 			return result;
 		}
 
-		private string DoPrint(TypeElement type)
+		private string DoPrint(TypeElement type, bool typeLinks)
 		{
 			string link = Link(type);
 			string text = link != null ? ShortName(type) : FullName(type);
-			if (link != null)
+			if (link != null && typeLinks)
 			{
 				return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
 			}
@@ -248,11 +248,11 @@ namespace IglooCastle.CLI
 			return Syntax(_documentation.Find(method));
 		}
 
-		public string Syntax(MethodElement method)
+		public string Syntax(MethodElement method, bool typeLinks = true)
 		{
 			string access = AccessPrefix(method);
 			string modifiers = Modifiers(method);
-			string returnType = Print(method.ReturnType);
+			string returnType = Print(method.ReturnType, typeLinks);
 			bool isExtension = method.IsExtension();
 			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0)));
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
@@ -280,6 +280,11 @@ namespace IglooCastle.CLI
 			if (method.IsStatic)
 			{
 				modifiers += " static";
+			}
+
+			if (method.IsFinal)
+			{
+				modifiers += " sealed";
 			}
 
 			if (method.IsAbstract)

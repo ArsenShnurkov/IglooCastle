@@ -84,9 +84,22 @@ namespace IglooCastle.CLI
 			return Documentation.FilenameProvider.Filename(this);
 		}
 
+		public override string ToString(string format, IFormatProvider formatProvider)
+		{
+			switch (format)
+			{
+				case "x":
+					return Documentation.TypePrinter.Syntax(this, typeLinks: false);
+				default:
+					return base.ToString(format, formatProvider);
+			}
+		}
+
 		protected override IXmlComment GetXmlComment()
 		{
 			return Documentation.GetMethodDocumentation(OwnerType.Type, Method.Name, Method.GetParameters());
 		}
+
+		public bool IsFinal { get { return Member.IsFinal; } }
 	}
 }

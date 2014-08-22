@@ -7,7 +7,7 @@ namespace IglooCastle.CLI
 	/// This is the root of all documentation elements.
 	/// </summary>
 	/// <typeparam name="TMember">The type of the member that this class documents.</typeparam>
-	public abstract class DocumentationElement<TMember>
+	public abstract class DocumentationElement<TMember> : IFormattable
 	{
 		private readonly Documentation _documentation;
 
@@ -57,6 +57,21 @@ namespace IglooCastle.CLI
 		public override int GetHashCode()
 		{
 			return Member.GetHashCode();
+		}
+
+		public virtual string ToString(string format, IFormatProvider formatProvider)
+		{
+			return Member.ToString();
+		}
+
+		public string ToString(string format)
+		{
+			return ToString(format, null);
+		}
+
+		public sealed override string ToString()
+		{
+			return ToString(null);
 		}
 	}
 }
