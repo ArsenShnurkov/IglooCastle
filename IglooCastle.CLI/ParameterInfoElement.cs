@@ -37,7 +37,20 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
+
 				return Documentation.Find(Member.ParameterType);
+			}
+		}
+
+		/// <summary>
+		/// Gets a value indicating whether this is a <c>params</c> parameter.
+		/// </summary>
+		/// <value><c>true</c> if this parameter is <c>params</c>; otherwise, <c>false</c>.</value>
+		public bool IsParams
+		{
+			get
+			{
+				return Member.GetCustomAttribute<ParamArrayAttribute>() != null;
 			}
 		}
 

@@ -17,8 +17,19 @@ namespace IglooCastle.Tests
 			const string expected = "public sealed override string ToString()";
 
 			MethodElement methodElement = Documentation
-				.Find(typeof(DocumentationElement<>)).
-				FindMethod("ToString", new Type[0]);
+				.Find(typeof(DocumentationElement<>))
+				.FindMethod("ToString", new Type[0]);
+
+			Assert.AreEqual(expected, methodElement.ToString("x"));
+		}
+
+		[Test]
+		public void Syntax_ParamsMethod()
+		{
+			const string expected = "public bool IsInstance(params Type[] types)";
+			MethodElement methodElement = Documentation
+				.Find(typeof(AttributeElement))
+				.FindMethod("IsInstance", typeof(Type[]));
 
 			Assert.AreEqual(expected, methodElement.ToString("x"));
 		}

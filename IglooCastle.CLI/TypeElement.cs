@@ -281,7 +281,7 @@ namespace IglooCastle.CLI
 			return Methods.SingleOrDefault(m => m.Member == method);
 		}
 
-		public MethodElement FindMethod(string methodName, Type[] parameterTypes)
+		public MethodElement FindMethod(string methodName, params Type[] parameterTypes)
 		{
 			return Methods.Where(m => m.Name == methodName 
 				&& m.GetParameters().Select(p => p.ParameterType.Member).SequenceEqual(parameterTypes)).SingleOrDefault();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace IglooCastle.CLI
 {
@@ -26,12 +27,12 @@ namespace IglooCastle.CLI
 		{
 			if (type.IsArray)
 			{
-				return Print(type.GetElementType()) + "[]";
+				return Print(type.GetElementType(), typeLinks) + "[]";
 			}
 
 			if (type.IsByRef)
 			{
-				return Print(type.GetElementType());
+				return Print(type.GetElementType(), typeLinks);
 			}
 
 			string result;
@@ -48,7 +49,7 @@ namespace IglooCastle.CLI
 			if (type.IsGenericType)
 			{
 				result += "&lt;";
-				result += string.Join(", ", type.GetGenericArguments().Select(t => Print(t)));
+				result += string.Join(", ", type.GetGenericArguments().Select(t => Print(t, typeLinks)));
 				result += "&gt;";
 			}
 
@@ -254,7 +255,9 @@ namespace IglooCastle.CLI
 			string modifiers = Modifiers(method);
 			string returnType = Print(method.ReturnType, typeLinks);
 			bool isExtension = method.IsExtension();
-			string args = string.Join(", ", method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0)));
+			string args = string.Join(
+				", ",
+				method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, typeLinks)));
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
@@ -299,42 +302,52 @@ namespace IglooCastle.CLI
 			return modifiers.TrimStart(' ');
 		}
 
-		private string Join(params string[] args)
+		private static string Join(params string[] args)
 		{
-			string result = "";
+			StringBuilder builder = new StringBuilder();
 			foreach (string s in args.Where(arg => !string.IsNullOrWhiteSpace(arg)))
 			{
-				result += " " + s;
+				if (builder.Length > 0)
+				{
+					builder.Append(' ');
+				}
+
+				builder.Append(s);
 			}
 
-			return result.TrimStart(' ');
+			return builder.ToString();
 		}
 
-		private string FormatParameter(ParameterInfoElement parameterInfo, bool isExtensionThis)
+		private string FormatParameter(ParameterInfoElement parameterInfo, bool isExtensionThis, bool typeLinks)
 		{
 			string result = "";
+
+			string @params = parameterInfo.IsParams ? "params" : "";
+
+			string byref = null;
 			TypeElement type = parameterInfo.ParameterType;
 			if (type.IsByRef)
 			{
 				type = type.GetElementType();
 				if (parameterInfo.IsOut)
 				{
-					result += "out ";
+					byref = "out";
 				}
 				else
 				{
-					result += "ref ";
+					byref = "ref";
 				}
 			}
 
-			if (isExtensionThis)
-			{
-				result += "this ";
-			}
+			string thisparam = isExtensionThis ? "this" : "";
 
-			result += Print(type);
-			result += " ";
-			result += parameterInfo.Name;
+			result = Join(
+				@params,
+				byref,
+				thisparam,
+				Print(type, typeLinks),
+				parameterInfo.Name);
+
 			return result;
 		}
 
