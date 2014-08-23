@@ -13,6 +13,10 @@ namespace IglooCastle.CLI
 		{
 		}
 
+		/// <summary>
+		/// Gets the name of the reflected element.
+		/// </summary>
+		/// <seealso cref="MemberInfo.Name"/>
 		public string Name
 		{
 			get { return Member.Name; }

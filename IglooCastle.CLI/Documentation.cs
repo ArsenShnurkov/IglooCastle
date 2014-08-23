@@ -37,7 +37,7 @@ namespace IglooCastle.CLI
 		/// <summary>
 		/// Gets or sets the type printer.
 		/// </summary>
-		public TypePrinter TypePrinter { get; set; }
+		internal TypePrinter TypePrinter { get; set; }
 
 		public NamespaceElement[] Namespaces
 		{
@@ -169,17 +169,6 @@ namespace IglooCastle.CLI
 			return true;
 		}
 
-		internal MethodElement Find(MethodInfo method)
-		{
-			if (method == null)
-			{
-				throw new ArgumentNullException("method", "Method cannot be null");
-			}
-
-			var type = Find(method.ReflectedType);
-			return type.Find(method);
-		}
-
 		internal PropertyElement Find(PropertyInfo propertyInfo)
 		{
 			return Types.SelectMany(t => t.Properties).SingleOrDefault(p => p.Property == propertyInfo);
@@ -187,12 +176,19 @@ namespace IglooCastle.CLI
 
 		public TypeElement Find(Type type)
 		{
-			return Types.FirstOrDefault(t => t.Type == type) ?? new ExternalTypeElement(this, type);
+			return type == null
+				? null :
+				(Types.FirstOrDefault(t => t.Type == type) ?? new ExternalTypeElement(this, type));
 		}
 
 		public NamespaceElement FindNamespace(string name)
 		{
 			return Namespaces.FirstOrDefault(n => n.Member == name);
+		}
+
+		public sealed class Demo
+		{
+			private Demo() {}
 		}
 	}
 }

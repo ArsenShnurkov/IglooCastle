@@ -41,13 +41,15 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				Type baseType = Type.BaseType;
-				if (baseType == null)
-				{
-					return null;
-				}
+				return Documentation.Find(Type.BaseType);
+			}
+		}
 
-				return Documentation.Find(baseType);
+		public TypeElement DeclaringType
+		{
+			get
+			{
+				return Documentation.Find(Type.DeclaringType);
 			}
 		}
 
@@ -276,15 +278,25 @@ namespace IglooCastle.CLI
 			return Member.GetNestedTypes().Select(t => Documentation.Find(t)).ToArray();
 		}
 
-		internal MethodElement Find(MethodInfo method)
+		public MethodElement GetMethod(string methodName)
 		{
-			return Methods.SingleOrDefault(m => m.Member == method);
+			return Methods.Where(m => m.Name == methodName).SingleOrDefault();
 		}
 
-		public MethodElement FindMethod(string methodName, params Type[] parameterTypes)
+		public MethodElement GetMethod(string methodName, params Type[] parameterTypes)
 		{
 			return Methods.Where(m => m.Name == methodName 
 				&& m.GetParameters().Select(p => p.ParameterType.Member).SequenceEqual(parameterTypes)).SingleOrDefault();
+		}
+
+		/// <summary>
+		/// Finds a property by its name.
+		/// </summary>
+		/// <param name="propertyName">The name of the property.</param>
+		/// <returns>The property. If no such property exists, <c>null</c> is returned.</returns>
+		public PropertyElement GetProperty(string propertyName)
+		{
+			return Properties.SingleOrDefault(p => p.Name == propertyName);
 		}
 	}
 

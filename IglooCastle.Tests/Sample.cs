@@ -15,5 +15,13 @@ namespace IglooCastle.Tests
 		{
 			throw new NotImplementedException();
 		}
+
+		public sealed class NestedSample
+		{
+			public sealed class SecondLevelNest
+			{
+
+			}
+		}
 	}
 }

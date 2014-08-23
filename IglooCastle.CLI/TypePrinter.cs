@@ -6,7 +6,7 @@ using System.Text;
 
 namespace IglooCastle.CLI
 {
-	public sealed class TypePrinter
+	internal sealed class TypePrinter
 	{
 		private readonly Documentation _documentation;
 		private readonly FilenameProvider _filenameProvider;
@@ -15,12 +15,6 @@ namespace IglooCastle.CLI
 		{
 			_documentation = documentation;
 			_filenameProvider = filenameProvider;
-		}
-
-		[Obsolete]
-		public string Print(Type type)
-		{
-			return Print(_documentation.Find(type));
 		}
 
 		public string Print(TypeElement type, bool typeLinks = true)
@@ -70,22 +64,6 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		private TypeElement GetContainerType(TypeElement nestedType)
-		{
-			if (!nestedType.IsNested)
-			{
-				throw new ArgumentException("Type " + nestedType + " is not nested.");
-			}
-
-			if (_documentation.IsLocalType(nestedType))
-			{
-				TypeElement containerType = _documentation.FilterTypes(t => t.GetNestedTypes().Contains(nestedType)).Single();
-				return containerType;
-			}
-
-			throw new NotImplementedException(nestedType.ToString());
-		}
-
 		private string FullName(TypeElement type)
 		{
 			if (type.IsGenericParameter)
@@ -105,7 +83,7 @@ namespace IglooCastle.CLI
 		{
 			if (type.IsNested && !type.IsGenericParameter)
 			{
-				TypeElement containerType = GetContainerType(type);
+				TypeElement containerType = type.DeclaringType;
 				return ShortName(containerType) + "." + type.Name;
 			}
 
@@ -162,18 +140,6 @@ namespace IglooCastle.CLI
 			return link.Replace("`", "%60");
 		}
 
-		[Obsolete]
-		public string Print(MethodInfo methodInfo)
-		{
-			return Print(_documentation.Find(methodInfo));
-		}
-
-		[Obsolete]
-		public string Print(PropertyInfo property)
-		{
-			return Print(_documentation.Find(property));
-		}
-
 		public string Print(PropertyElement propertyElement)
 		{
 			string link = Link(propertyElement);
@@ -220,12 +186,6 @@ namespace IglooCastle.CLI
 			Namespace = 2
 		}
 
-		[Obsolete]
-		public string Name(Type type, NameComponents nameComponents)
-		{
-			return Name(_documentation.Find(type), nameComponents);
-		}
-
 		public string Name(TypeElement type, NameComponents nameComponents)
 		{
 			string name = ShortName(type);
@@ -241,12 +201,6 @@ namespace IglooCastle.CLI
 			}
 
 			return name;
-		}
-
-		[Obsolete]
-		public string Syntax(MethodInfo method)
-		{
-			return Syntax(_documentation.Find(method));
 		}
 
 		public string Syntax(MethodElement method, bool typeLinks = true)
@@ -349,12 +303,6 @@ namespace IglooCastle.CLI
 				parameterInfo.Name);
 
 			return result;
-		}
-
-		[Obsolete]
-		public string Syntax(PropertyInfo property)
-		{
-			return Syntax(_documentation.Find(property));
 		}
 
 		public string Syntax(PropertyElement property)
