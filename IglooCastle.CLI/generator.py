@@ -29,6 +29,8 @@ def fmt_non_empty(template, contents):
 	else:
 		return ""
 
+def filter_empty(node_list):
+	return [ n for n in node_list if not n.is_content_empty() ]
 
 class HtmlTemplate:
 	def __init__(self):
@@ -72,9 +74,11 @@ class HtmlTemplate:
 class NavigationNode:
 	def __init__(self):
 		self.EXPANDER = '<span class="js-expander">-</span>'
+		self.__widget_member_filter_id = 0
 		pass
 
 	def nav_html(self):
+		"""Returns the HTML for the left side navigation tree."""
 		children_html = self.children_nav_html()
 		node_html     = a(self.href(), self.text())
 		if len(children_html):
@@ -87,7 +91,12 @@ class NavigationNode:
 		else:
 			return '<li class="leaf">%s</li>' % node_html
 
+	def children_nav_html(self):
+		"""Returns the children nodes' HTML for the left side navigation tree."""
+		return "\n".join(child.nav_html() for child in self.children())
+
 	def contents_html_template(self):
+		"""Returns the HTML for the main content area."""
 		return None
 
 	def visit(self, f):
@@ -97,19 +106,20 @@ class NavigationNode:
 			child.visit(f)
 
 	def href(self):
+		"""Returns the file that this node should be written to."""
 		raise NotImplementedError('You need to override href()')
 
 	def text(self):
+		"""Returns the title of this node in the tree."""
 		raise NotImplementedError('You need to override text()')
 
 	def children(self):
+		"""Returns the child nodes of this node."""
 		return []
 
-	def is_empty(self):
-		return len(self.children()) <= 0
-
-	def children_nav_html(self):
-		return "\n".join(child.nav_html() for child in self.children())
+	def is_content_empty(self):
+		"""Checks if this node is empty. Used in combination with filter_empty."""
+		return False
 
 	def inherited_from(self, member_element):
 		if not member_element.IsInherited:
@@ -213,11 +223,20 @@ class NavigationNode:
 				</tbody>
 			</table>""", "".join(method_list_item(m) for m in methods))
 
-	def append_if_not_empty(self, lst, node):
-		if not node.is_empty():
-			lst.append(node)
+	def widget_member_filter(self):
+		self.__widget_member_filter_id = self.__widget_member_filter_id + 1
+		id_inherited = "chkShowInherited%s" % self.__widget_member_filter_id
+		id_protected = "chkShowProtected%s" % self.__widget_member_filter_id
+		return """
 
-		return lst
+				<div>
+					Show:
+					<input type="checkbox" checked="checked" class="js-show-inherited" id="%s" />
+					<label for="%s">Inherited</label>
+					<input type="checkbox" checked="checked" class="js-show-protected" id="%s" />
+					<label for="%s">Protected</label>
+				</div>
+			"""	% (id_inherited, id_inherited, id_protected, id_protected)
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -254,32 +273,21 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def children(self):
 		result = [ self.__type_node(t) for t in self.namespace_element.Types ]
-		result = self.append_if_not_empty(result, NavigationExtensionMethodsNode(self.namespace_element) )
+		result.append(
+			NavigationExtensionMethodsNode(self.namespace_element)
+		)
+		result = filter_empty(result)
 		return result
 
 	def contents_html_template(self):
 		print "Generating page for namespace %s" % self.namespace_element.Namespace
 		html_template       = HtmlTemplate()
 		html_template.title = self.text()
-		html_template.main  = \
-			fmt_non_empty("""
-				<h2>Classes</h2>
-				<ol>
-					%s
-				</ol>
-				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsClass)) + \
-			fmt_non_empty("""
-				<h2>Interfaces</h2>
-				<ol>
-					%s
-				</ol>
-				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsInterface)) + \
-			fmt_non_empty("""
-				<h2>Enumerations</h2>
-				<ol>
-					%s
-				</ol>
-				""", "".join("<li>" + t.ToHtml() + "</li>" for t in self.namespace_element.Types if t.IsEnum))
+		html_template.main  = "\n".join([
+			self.__table("Classes", [t for t in self.namespace_element.Types if t.IsClass]),
+			self.__table("Interfaces", [t for t in self.namespace_element.Types if t.IsInterface]),
+			self.__table("Enumerations", [t for t in self.namespace_element.Types if t.IsEnum])
+		])
 
 		# TODO: delegates
 
@@ -294,6 +302,27 @@ class NavigationNamespaceNode(NavigationNode):
 		else:
 			return NavigationTypeNode(type_element)
 
+	def __table(self, title, types):
+		def table_row(t):
+			return """<tr>
+				<td>%s</td>
+				<td>%s</td>
+			</tr>""" % (t.ToHtml(), t.XmlComment.Summary() or "&nbsp;")
+
+		return fmt_non_empty("<h2>" + title + """</h2>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				%s
+				</tbody>
+			</table>
+		""", "".join(table_row(t) for t in types))
+
 
 class NavigationTypeNode(NavigationNode):
 	def __init__(self, type_element):
@@ -307,13 +336,9 @@ class NavigationTypeNode(NavigationNode):
 		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
 
 	def children(self):
-		result = []
+		result = filter_empty([NavigationPropertiesNode(self.type_element), NavigationMethodsNode(self.type_element)])
 
 		# TODO: constructors node
-
-		result = self.append_if_not_empty(result, NavigationPropertiesNode(self.type_element))
-		result = self.append_if_not_empty(result, NavigationMethodsNode(self.type_element))
-
 		# TODO: events node
 
 		return result
@@ -376,29 +401,13 @@ class NavigationTypeNode(NavigationNode):
 
 	def properties_section(self):
 		return fmt_non_empty(
-			"""
-			<h2>Properties</h2>
-			<div>
-				Show:
-				<input type="checkbox" checked="checked" class="js-show-inherited" />
-				Inherited
-			</div>
-			%s
-			""", self.properties_table(self.type_element.Properties))
+			"<h2>Properties</h2>" + self.widget_member_filter() + "%s",
+			self.properties_table(self.type_element.Properties))
 
 	def methods_section(self):
 		return fmt_non_empty(
-			"""
-			<h2>Methods</h2>
-			<div>
-				Show:
-				<input type="checkbox" checked="checked" class="js-show-inherited" />
-				Inherited
-				<input type="checkbox" checked="checked" class="js-show-protected" />
-				Protected
-			</div>
-			%s
-			""", self.methods_table(self.type_element.Methods))
+			"<h2>Methods</h2>" + self.widget_member_filter() + "%s",
+			self.methods_table(self.type_element.Methods))
 
 	def extension_methods_section(self):
 		return fmt_non_empty(
@@ -518,16 +527,14 @@ class NavigationTypeMembersNode(NavigationNode):
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), self.text())
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), self.text())
 		html_template.main   = fmt_non_empty(
-			"""
-			<div>
-				Show:
-				<input type="checkbox" checked="checked" class="js-show-inherited" />
-				Inherited
-			</div>
-			%s
-			""", self.main_html_table())
+			self.widget_member_filter() + "%s",
+			self.main_html_table())
 
 		return html_template
+
+	def is_content_empty(self):
+		"""Checks if this node is empty. Used in combination with append_if_not_empty."""
+		return len(self.children()) <= 0
 
 	def main_html_table(self):
 		raise NotImplementedError("override me")
@@ -573,7 +580,7 @@ class NavigationExtensionMethodsNode(NavigationNode):
 	def documentation(self):
 		return self.namespace_element.Documentation
 
-	def is_empty(self):
+	def is_content_empty(self):
 		return len(self.__get_extension_methods()) <= 0
 
 	def contents_html_template(self):
