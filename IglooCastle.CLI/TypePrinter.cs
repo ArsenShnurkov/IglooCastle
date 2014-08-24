@@ -305,6 +305,33 @@ namespace IglooCastle.CLI
 			return result;
 		}
 
+		public string Syntax(TypeElement type, bool typeLinks = true)
+		{
+			string result = Join(
+				"public",
+				type.IsInterface ? "" :
+				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),
+				type.IsClass ? "class" : type.IsEnum ? "enum" : type.IsInterface ? "interface" : "struct",
+				type.ToString("s"));
+
+			TypeElement baseType = type.BaseType;
+			if (baseType != null && baseType.BaseType == null)
+			{
+				// every class derives from System.Object, that's not interesting
+				baseType = null;
+			}
+
+			var interfaces = type.GetInterfaces();
+
+			var baseTypes = new[] { baseType }.Concat(interfaces).Where(t => t != null).ToArray();
+			if (baseTypes.Any())
+			{
+				result = result + " : " + string.Join(", ", baseTypes.Select(t => Print(t, typeLinks)));
+			}
+
+			return result;
+		}
+
 		public string Syntax(PropertyElement property)
 		{
 			var getter = property.CanRead ? property.GetMethod : null;

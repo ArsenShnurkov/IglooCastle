@@ -356,6 +356,7 @@ class NavigationTypeNode(NavigationNode):
 			self.base_type_section(),
 			self.interfaces_section(),
 			self.derived_types_section(),
+			self.__syntax_section(),
 			self.constructors_section(),
 			self.properties_section(),
 			self.methods_section(),
@@ -366,6 +367,9 @@ class NavigationTypeNode(NavigationNode):
 		# TODO: separate attribute template?
 
 		return html_template
+
+	def __syntax_section(self):
+		return '<h2>Syntax</h2><code class="syntax">%s</code>' % self.type_element.ToSyntax()
 
 	def constructors_section(self):
 
@@ -636,7 +640,7 @@ class NavigationPropertyNode(NavigationNode):
 				""", self.property_element.XmlComment.Summary()) + \
 				"""
 				<h2>Syntax</h2>
-				<code>
+				<code class="syntax">
 				%s
 				</code>
 				""" % self.property_element.ToSyntax()
@@ -689,7 +693,7 @@ class NavigationMethodNode(NavigationNode):
 
 		result = """
 			<h2>Syntax</h2>
-			<code>
+			<code class="syntax">
 			%s
 			</code>
 			""" % syntax

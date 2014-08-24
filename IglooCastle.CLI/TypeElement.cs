@@ -5,8 +5,16 @@ using System.Reflection;
 
 namespace IglooCastle.CLI
 {
+	/// <summary>
+	/// Encapsulates a <see cref="Type"/>.
+	/// </summary>
 	public class TypeElement : ReflectedElement<Type>, IFormattable
 	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="IglooCastle.CLI.TypeElement"/> class.
+		/// </summary>
+		/// <param name="owner">The documentation that owns this instance.</param>
+		/// <param name="type">The type that this instance represents.</param>
 		public TypeElement(Documentation owner, Type type)
 			: base(owner, type)
 		{
@@ -22,20 +30,85 @@ namespace IglooCastle.CLI
 			get { return Member; }
 		}
 
+		#region Unchanged properties of contained type, exposed.
+
+		/// <summary>
+		/// Gets the assembly.
+		/// </summary>
+		/// <value>The assembly.</value>
+		/// <seealso cref="Type.Assembly"/>
+		public Assembly Assembly
+		{
+			get { return Member.Assembly; }
+		}
+
+		/// <summary>
+		/// Gets a value indicating whether this instance is enum.
+		/// </summary>
+		/// <value><c>true</c> if this instance is enum; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsEnum"/>
 		public bool IsEnum
 		{
 			get { return Member.IsEnum; }
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this instance is class.
+		/// </summary>
+		/// <value><c>true</c> if this instance is class; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsClass"/>
 		public bool IsClass
 		{
 			get { return Member.IsClass; }
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this instance is interface.
+		/// </summary>
+		/// <value><c>true</c> if this instance is interface; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsInterface"/>
 		public bool IsInterface
 		{
 			get { return Member.IsInterface; }
 		}
+
+		/// <summary>
+		/// Gets a value indicating whether this instance is generic type.
+		/// </summary>
+		/// <value><c>true</c> if this instance is generic type; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsGenericType"/>
+		public bool IsGenericType
+		{
+			get { return Member.IsGenericType; }
+		}
+
+		public string Namespace { get { return Member.Namespace; } }
+
+		/// <summary>
+		/// Gets a value indicating whether this instance is array.
+		/// </summary>
+		/// <value><c>true</c> if this instance is array; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsArray"/>
+		public bool IsArray { get { return Member.IsArray; } }
+
+		public bool IsByRef { get { return Member.IsByRef; } }
+
+		/// <summary>
+		/// Gets a value indicating whether this instance is abstract.
+		/// </summary>
+		/// <value><c>true</c> if this instance is abstract; otherwise, <c>false</c>.</value>
+		/// <seealso cref="Type.IsAbstract"/>
+		public bool IsAbstract { get { return Member.IsAbstract; } }
+
+		public bool IsSealed { get { return Member.IsSealed; } }
+
+		public bool IsGenericParameter { get { return Member.IsGenericParameter; } }
+
+		public bool IsGenericTypeDefinition { get { return Member.IsGenericTypeDefinition; } }
+
+		public bool IsNested { get { return Member.IsNested; } }
+
+		#endregion
 
 		public TypeElement BaseType
 		{
@@ -51,11 +124,6 @@ namespace IglooCastle.CLI
 			{
 				return Documentation.Find(Type.DeclaringType);
 			}
-		}
-
-		public Assembly Assembly
-		{
-			get { return Member.Assembly; }
 		}
 
 		public ICollection<ConstructorElement> Constructors
@@ -127,13 +195,6 @@ namespace IglooCastle.CLI
 					t.HasBaseType(this)
 				).ToList();
 		}
-
-		public bool IsGenericType
-		{
-			get { return Member.IsGenericType; }
-		}
-
-		public string Namespace { get { return Member.Namespace; } }
 
 		public TypeElement[] GetGenericArguments()
 		{
@@ -253,25 +314,17 @@ namespace IglooCastle.CLI
 			return Documentation.GetXmlComment("//member[@name=\"T:" + Type.FullName + "\"]");
 		}
 
-		public bool IsArray { get { return Member.IsArray; } }
-
 		public TypeElement GetElementType()
 		{
 			return Documentation.Find(Member.GetElementType());
 		}
 
-		public bool IsByRef { get { return Member.IsByRef; } }
-
-		public bool IsGenericParameter { get { return Member.IsGenericParameter; } }
-
-		public bool IsGenericTypeDefinition { get { return Member.IsGenericTypeDefinition; } }
+		public bool IsStatic { get { return Member.IsAbstract && Member.IsSealed; } }
 
 		public TypeElement GetGenericTypeDefinition()
 		{
 			return Documentation.Find(Member.GetGenericTypeDefinition());
 		}
-
-		public bool IsNested { get { return Member.IsNested; } }
 
 		public TypeElement[] GetNestedTypes()
 		{
@@ -297,6 +350,11 @@ namespace IglooCastle.CLI
 		public PropertyElement GetProperty(string propertyName)
 		{
 			return Properties.SingleOrDefault(p => p.Name == propertyName);
+		}
+
+		public string ToSyntax()
+		{
+			return Documentation.TypePrinter.Syntax(this);
 		}
 	}
 

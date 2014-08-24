@@ -133,5 +133,47 @@ namespace IglooCastle.Tests
 				"&gt;";
 			Assert.AreEqual(expected, Documentation.Find(typeof(DocumentationElement<PropertyElement>)).ToHtml());
 		}
+
+		[Test]
+		public void TestSyntaxWithLinksClass()
+		{
+			const string expected = "public class Documentation : <a href=\"T_IglooCastle.CLI.ITypeContainer.html\">ITypeContainer</a>";
+			Assert.AreEqual(expected, Documentation.Find(typeof(Documentation)).ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksInterface()
+		{
+			const string expected = "public interface ITypeContainer";
+			Assert.AreEqual(expected, Documentation.Find(typeof(ITypeContainer)).ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksStaticClass()
+		{
+			const string expected = "public static class XmlCommentExtensions";
+			Assert.AreEqual(expected, Documentation.Find(typeof(XmlCommentExtensions)).ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksSealedClass()
+		{
+			const string expected = "public sealed class FilenameProvider";
+			Assert.AreEqual(expected, Documentation.Find(typeof(FilenameProvider)).ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksAbstractClass()
+		{
+			const string expected = "public abstract class DocumentationElement&lt;TMember&gt; : <a href=\"http://msdn.microsoft.com/en-us/library/system.iformattable%28v=vs.110%29.aspx\">IFormattable</a>";
+			Assert.AreEqual(expected, Documentation.Find(typeof(DocumentationElement<>)).ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksDerivedClass()
+		{
+			const string expected = "public class TypeElement : <a href=\"T_IglooCastle.CLI.ReflectedElement%601.html\">ReflectedElement</a>&lt;<a href=\"http://msdn.microsoft.com/en-us/library/system.type%28v=vs.110%29.aspx\">Type</a>&gt;, <a href=\"http://msdn.microsoft.com/en-us/library/system.iformattable%28v=vs.110%29.aspx\">IFormattable</a>";
+			Assert.AreEqual(expected, Documentation.Find(typeof(TypeElement)).ToSyntax());
+		}
 	}
 }
