@@ -358,5 +358,20 @@ namespace IglooCastle.CLI
 				_filenameProvider.Filename(namespaceElement),
 				namespaceElement.Namespace);
 		}
+
+		public string Print(ConstructorElement constructorElement)
+		{
+			return "todo print";
+		}
+
+		public string Signature(ConstructorElement constructorElement)
+		{
+			return "todo signature";
+		}
+
+		public string Syntax(ConstructorElement constructorElement)
+		{
+			return "todo syntax";
+		}
 	}
 }

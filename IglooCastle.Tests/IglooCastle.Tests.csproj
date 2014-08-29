@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConstructorElementTest.cs" />
     <Compile Include="FilenameProviderTest.cs" />
     <Compile Include="MethodElementTest.cs" />
     <Compile Include="NamespaceElementTest.cs" />

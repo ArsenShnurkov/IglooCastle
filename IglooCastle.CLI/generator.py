@@ -136,10 +136,50 @@ class NavigationNode:
 		access_str = access.ToAccessString()
 		access_str = """<span class="%s" title="%s">%s</span>""" % (access_str, access_str, access_str)
 
-		if element.IsStatic:
+		if isinstance(element, IglooCastle.CLI.MethodElement) and element.IsStatic:
 			access_str += '<span class="static" title="static">static</span>'
 
 		return access_str
+
+	def constructors_table(self, constructors):
+		"""Prints a table with the given constructors."""
+
+		def constructor_list_item(constructor_element):
+			description = " ".join([
+				constructor_element.XmlComment.Summary() or "&nbsp;",
+				self.inherited_from(constructor_element)
+			])
+			tr_class    = " ".join([
+				"inherited" if constructor_element.IsInherited else "",
+				self.___access_css(constructor_element)
+			])
+			result = """
+				<tr class="%s">
+					<td>%s</td>
+					<td>%s</td>
+					<td>%s</td>
+				</tr>
+			""" % (tr_class,
+				   self.__access_str(constructor_element),
+				   constructor_element.ToHtml(),
+				   description)
+
+			return result
+
+		return fmt_non_empty(
+			"""
+			<table class="members constructors">
+				<thead>
+					<tr>
+						<th>&nbsp;</th>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				%s
+				</tbody>
+			</table>""", "".join(constructor_list_item(c) for c in constructors))
 
 	def properties_table(self, properties):
 		"""Prints a table with the given properties."""
@@ -336,7 +376,10 @@ class NavigationTypeNode(NavigationNode):
 		return self.type_element.ToString("s") + " " + self.type_element.TypeKind
 
 	def children(self):
-		result = filter_empty([NavigationPropertiesNode(self.type_element), NavigationMethodsNode(self.type_element)])
+		result = filter_empty([
+			NavigationConstructorsNode(self.type_element),
+			NavigationPropertiesNode(self.type_element),
+			NavigationMethodsNode(self.type_element)])
 
 		# TODO: constructors node
 		# TODO: events node
@@ -543,6 +586,21 @@ class NavigationTypeMembersNode(NavigationNode):
 	def main_html_table(self):
 		raise NotImplementedError("override me")
 
+
+class NavigationConstructorsNode(NavigationTypeMembersNode):
+	def __init__(self, type_element):
+		NavigationTypeMembersNode.__init__(self, type_element)
+
+	def text(self):
+		return "Constructors"
+
+	def children(self):
+		return [ NavigationConstructorNode(c) for c in self.type_element.Constructors ]
+
+	def main_html_table(self):
+		return self.constructors_table(self.type_element.Constructors)
+
+
 class NavigationPropertiesNode(NavigationTypeMembersNode):
 	def __init__(self, type_element):
 		NavigationTypeMembersNode.__init__(self, type_element)
@@ -555,6 +613,7 @@ class NavigationPropertiesNode(NavigationTypeMembersNode):
 
 	def main_html_table(self):
 		return self.properties_table(self.type_element.Properties)
+
 
 class NavigationMethodsNode(NavigationTypeMembersNode):
 	def __init__(self, type_element):
@@ -613,6 +672,86 @@ class NavigationExtensionMethodsNode(NavigationNode):
 	def __get_extension_methods(self):
 		return [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
 
+
+class NavigationConstructorNode(NavigationNode):
+	def __init__(self, constructor_element):
+		NavigationNode.__init__(self)
+		self.constructor_element = constructor_element
+
+	def href(self):
+		return self.constructor_element.Filename()
+
+	def text(self):
+		return self.constructor_element.ToSignature()
+
+	def documentation(self):
+		return self.constructor_element.Documentation
+
+	def contents_html_template(self):
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s %s" % (self.constructor_element.OwnerType.ToString("f"), "Constructor")
+		html_template.h1     = "%s %s" % (self.constructor_element.OwnerType.ToString("s"), "Constructor")
+		html_template.main   = self.__summary_section() + \
+			self.__syntax_section() + \
+			self.__exceptions_section() + \
+			self.__remarks_section() + \
+			self.__example_section() + \
+			self.__see_also_section()
+
+		return html_template
+
+	def __summary_section(self):
+		return """
+			<p>%s</p>
+			<dl>
+				<dt>Namespace</dt>
+				<dd>%s</dd>
+				<dt>Assembly</dt>
+				<dd>%s</dd>
+			</dl>
+			""" % (self.constructor_element.XmlComment.Summary(),
+				   self.constructor_element.NamespaceElement.ToHtml(),
+				   self.constructor_element.OwnerType.Assembly.ToString())
+
+	def __syntax_section(self):
+		syntax = self.constructor_element.ToSyntax()
+
+		result = """
+			<h2>Syntax</h2>
+			<code class="syntax">
+			%s
+			</code>
+			""" % syntax
+
+		result += self.__parameters_section()
+		return result
+
+	def __parameter(self, parameter):
+		return "<li>%s<br />Type: %s %s</li>" % (
+			parameter.Name,
+			parameter.ParameterType.ToHtml(),
+			self.constructor_element.XmlComment.Param(parameter.Name)
+		)
+
+	def __parameters_section(self):
+		return fmt_non_empty("""
+			<h3>Parameters</h3>
+			<ol>
+			%s
+			</ol>
+			""", "".join(self.__parameter(p) for p in self.constructor_element.GetParameters()))
+
+	def __exceptions_section(self):
+		return ""
+
+	def __remarks_section(self):
+		return self.constructor_element.XmlComment.Section("remarks")
+
+	def __example_section(self):
+		return self.constructor_element.XmlComment.Section("example")
+
+	def __see_also_section(self):
+		return ""
 
 
 class NavigationPropertyNode(NavigationNode):

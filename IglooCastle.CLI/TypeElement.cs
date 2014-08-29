@@ -356,6 +356,14 @@ namespace IglooCastle.CLI
 		{
 			return Documentation.TypePrinter.Syntax(this);
 		}
+
+		public ConstructorElement GetConstructor(params TypeElement[] types)
+		{
+			return new ConstructorElement(
+				Documentation,
+				this,
+				Member.GetConstructor(types.Select(t => t.Member).ToArray()));
+		}
 	}
 
 	internal sealed class ExternalTypeElement : TypeElement
