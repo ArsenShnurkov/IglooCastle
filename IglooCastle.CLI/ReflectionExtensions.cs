@@ -74,17 +74,6 @@ namespace IglooCastle.CLI
 			return MethodAttributes.PrivateScope;
 		}
 
-		/// <summary>
-		/// Checks if this method is an extension method.
-		/// </summary>
-		/// <param name="method">This method.</param>
-		/// <returns><c>true</c> if this is an extension method, <c>false</c> otherwise.</returns>
-		public static bool IsExtension(this MethodInfo method)
-		{
-			bool isExtension = method.GetCustomAttribute<ExtensionAttribute>() != null;
-			return isExtension;
-		}
-
 		public static bool IsOverload(this MethodInfo method)
 		{
 			return method.ReflectedType.GetPublicAndProtectedMethods().Count(m => m.Name == method.Name) >= 2;

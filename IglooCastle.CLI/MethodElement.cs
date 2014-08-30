@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace IglooCastle.CLI
 {
@@ -55,9 +56,14 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		/// <summary>
+		/// Checks if this method is an extension method.
+		/// </summary>
+		/// <returns><c>true</c> if this is an extension method, <c>false</c> otherwise.</returns>
 		public bool IsExtension()
 		{
-			return Member.IsExtension();
+			bool isExtension = Member.GetCustomAttribute<ExtensionAttribute>() != null;
+			return isExtension;
 		}
 
 		public string ToHtml()

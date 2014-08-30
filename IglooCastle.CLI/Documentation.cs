@@ -190,6 +190,23 @@ namespace IglooCastle.CLI
 
 namespace IglooCastle.Demo
 {
+	/// <summary>
+	/// Basic calculator demo.
+	/// </summary>
+	public sealed class CalculatorDemo
+	{
+		/// <summary>
+		/// Adds two numbers.
+		/// </summary>
+		/// <param name="x">The first number to add.</param>
+		/// <param name="y">The second number to add.</param>
+		/// <returns>The sum of the two parameters.</returns>
+		public int Add(int x, int y)
+		{
+			return x + y;
+		}
+	}
+
 	public sealed class NestingDemo
 	{
 		private NestingDemo() {}

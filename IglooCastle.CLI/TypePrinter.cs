@@ -166,7 +166,7 @@ namespace IglooCastle.CLI
 			string text;
 			if (methodElement.IsOverload)
 			{
-				text = methodElement.Name + "(" + string.Join(", ", methodElement.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
+				text = methodElement.Name + ParameterSignature(methodElement);
 			}
 			else
 			{
@@ -213,15 +213,23 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
+		public string Parameters<T>(MethodBaseElement<T> method, bool typeLinks = true)
+			where T : MethodBase
+		{
+			MethodElement m = method as MethodElement;
+			bool isExtension = m != null && m.IsExtension();
+			string args = string.Join(
+				", ",
+				method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, typeLinks)));
+			return args;
+		}
+
 		public string Syntax(MethodElement method, bool typeLinks = true)
 		{
 			string access = AccessPrefix(method);
 			string modifiers = Modifiers(method);
 			string returnType = Print(method.ReturnType, typeLinks);
-			bool isExtension = method.IsExtension();
-			string args = string.Join(
-				", ",
-				method.GetParameters().Select((p, index) => FormatParameter(p, isExtension && index == 0, typeLinks)));
+			string args = Parameters(method, typeLinks);
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
@@ -382,12 +390,18 @@ namespace IglooCastle.CLI
 			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
 		}
 
+		public string ParameterSignature<T>(MethodBaseElement<T> methodBaseElement)
+			where T : MethodBase
+		{
+			return "(" + string.Join(", ", methodBaseElement.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
+		}
+
 		public string Signature(ConstructorElement constructorElement)
 		{
 			string text = Name(constructorElement.DeclaringType, NameComponents.Name);
 			if (constructorElement.DeclaringType.Constructors.Count() > 1)
 			{
-				text += "(" + string.Join(", ", constructorElement.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
+				text += ParameterSignature(constructorElement);
 			}
 
 			return text;
@@ -396,9 +410,7 @@ namespace IglooCastle.CLI
 		public string Syntax(ConstructorElement constructorElement, bool typeLinks = true)
 		{
 			string access = AccessPrefix(constructorElement);
-			string args = string.Join(
-				", ",
-				constructorElement.GetParameters().Select((p, index) => FormatParameter(p, isExtensionThis: false, typeLinks: typeLinks)));
+			string args = Parameters(constructorElement, typeLinks);
 			return string.Format(
 				"{0} {1}({2})",
 				access,

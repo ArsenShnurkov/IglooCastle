@@ -74,4 +74,12 @@ namespace IglooCastle.CLI
 			return ToString(null);
 		}
 	}
+
+	public interface ICodeFormattable
+	{
+		// ToString(s), ToString(f)
+		string ToSyntax();
+		string ToHtml();
+		string ToSignature();
+	}
 }

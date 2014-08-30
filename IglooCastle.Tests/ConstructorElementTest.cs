@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IglooCastle.CLI;
+using IglooCastle.Demo;
 
 namespace IglooCastle.Tests
 {
@@ -53,6 +54,18 @@ namespace IglooCastle.Tests
 			Assert.AreEqual(
 				"protected DocumentationElement(Documentation documentation, TMember member)",
 				constructorElement.ToString("x"));
+		}
+
+		[Test]
+		public void Test_ToString_Custom()
+		{
+			ConstructorElement constructorElement = 
+				Documentation.Find(typeof(DemoMultipleConstructors))
+					.GetConstructor(Documentation.Find(typeof(int)));
+			Assert.IsNotNull(constructorElement, "Could not find constructor");
+			Assert.AreEqual(
+				"DemoMultipleConstructors Constructor(int)",
+				constructorElement.ToString("{typename} Constructor{args}"));
 		}
 	}
 }

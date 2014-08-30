@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Linq;
 using System.Reflection;
+using IglooCastle.Demo;
 
 namespace IglooCastle.Tests
 {
@@ -11,20 +12,14 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestParam()
 		{
-			/**
-			 * /// <summary>
-			 * /// Checks if this method is an extension method.
-			 * /// </summary>
-			 * /// <param name="method">This method.</param>
-			 * /// <returns><c>true</c> if this is an extension method, <c>false</c> otherwise.</returns>
-			 */
-			MethodInfo method = typeof(ReflectionExtensions).GetMethod("IsExtension");
-			var xmlComment = Documentation.Namespaces[0].Methods.Single(m => m.Member == method).XmlComment;
+			var xmlComment = Documentation.Find(typeof(CalculatorDemo))
+				.GetMethod("Add").XmlComment;
 			Assert.IsNotNull(xmlComment);
 			Assert.IsNotInstanceOf(typeof(MissingXmlComment), xmlComment);
-			Assert.AreEqual("Checks if this method is an extension method.", xmlComment.Summary());
-			Assert.AreEqual("This method.", xmlComment.Param("method"));
-			Assert.AreEqual("<code>true</code> if this is an extension method, <code>false</code> otherwise.", xmlComment.Returns());
+			Assert.AreEqual("Adds two numbers.", xmlComment.Summary());
+			Assert.AreEqual("The first number to add.", xmlComment.Param("x"));
+			Assert.AreEqual("The second number to add.", xmlComment.Param("y"));
+			Assert.AreEqual("The sum of the two parameters.", xmlComment.Returns());
 		}
 
 		[Test]
