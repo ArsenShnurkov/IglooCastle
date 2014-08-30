@@ -94,6 +94,13 @@
     <Compile Include="XmlCommentExtensions.cs" />
     <Compile Include="ParameterInfoElement.cs" />
     <Compile Include="AttributeElement.cs" />
+    <Compile Include="StringExtensions.cs" />
+    <Compile Include="ExternalTypeElement.cs" />
+    <Compile Include="PrinterBase.cs" />
+    <Compile Include="PropertyPrinter.cs" />
+    <Compile Include="MethodBasePrinter.cs" />
+    <Compile Include="ConstructorPrinter.cs" />
+    <Compile Include="MethodPrinter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

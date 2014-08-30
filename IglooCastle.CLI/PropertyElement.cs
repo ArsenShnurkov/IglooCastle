@@ -87,16 +87,6 @@ namespace IglooCastle.CLI
 			}
 		}
 
-		public string ToHtml()
-		{
-			return Documentation.TypePrinter.Print(this);
-		}
-
-		public string ToSyntax()
-		{
-			return Documentation.TypePrinter.Syntax(this);
-		}
-
 		public string Filename()
 		{
 			return Documentation.FilenameProvider.Filename(this);
@@ -118,6 +108,11 @@ namespace IglooCastle.CLI
 			}
 
 			return result;
+		}
+
+		protected override PrinterBase GetPrinter()
+		{
+			return new PropertyPrinter(Documentation);
 		}
 	}
 }

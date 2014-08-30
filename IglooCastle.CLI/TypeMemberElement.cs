@@ -30,5 +30,22 @@ namespace IglooCastle.CLI
 				return Member.DeclaringType != OwnerType.Type;
 			}
 		}
+
+		protected abstract PrinterBase GetPrinter();
+
+		public string ToSignature()
+		{
+			return GetPrinter().Signature(this);
+		}
+
+		public string ToSyntax()
+		{
+			return GetPrinter().Syntax(this);
+		}
+
+		public string ToHtml()
+		{
+			return GetPrinter().Print(this);
+		}
 	}
 }

@@ -256,12 +256,18 @@ namespace IglooCastle.CLI
 				return Member.ToString();
 			}
 
-			if (format == "l")
+			if (format == "l" || format == "L")
 			{
-				return Documentation.TypePrinter.Print(this);
+				return Documentation.TypePrinter.Print(this, typeLinks: format == "l");
 			}
 
-			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name | TypePrinter.NameComponents.GenericArguments;
+			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name;
+
+			if (format != "n")
+			{
+				nameComponents |= TypePrinter.NameComponents.GenericArguments;
+			}
+
 			if (format == "f")
 			{
 				nameComponents = nameComponents | TypePrinter.NameComponents.Namespace;
@@ -360,18 +366,6 @@ namespace IglooCastle.CLI
 		public ConstructorElement GetConstructor(params TypeElement[] types)
 		{
 			return Constructors.SingleOrDefault(c => c.GetParameters().Select(p => p.ParameterType).SequenceEqual(types));
-		}
-	}
-
-	internal sealed class ExternalTypeElement : TypeElement
-	{
-		public ExternalTypeElement(Documentation owner, Type type) : base(owner, type)
-		{
-		}
-
-		public override string Filename(string prefix = "T")
-		{
-			return null;
 		}
 	}
 }

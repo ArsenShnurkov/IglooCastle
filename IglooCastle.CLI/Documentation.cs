@@ -26,7 +26,7 @@ namespace IglooCastle.CLI
 		public Documentation()
 		{
 			FilenameProvider = new FilenameProvider();
-			TypePrinter = new TypePrinter(this, FilenameProvider);
+			TypePrinter = new TypePrinter(this);
 		}
 
 		/// <summary>

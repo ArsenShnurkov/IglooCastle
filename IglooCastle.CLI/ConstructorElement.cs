@@ -32,12 +32,17 @@ namespace IglooCastle.CLI
 			return ToStringShortFormat(format) ?? ToStringLongFormat(format);
 		}
 
+		protected override PrinterBase GetPrinter()
+		{
+			return new ConstructorPrinter(Documentation);
+		}
+
 		private string ToStringShortFormat(string format)
 		{
 			switch (format)
 			{
 				case "x":
-					return Documentation.TypePrinter.Syntax(this, typeLinks: false);
+					return GetPrinter().Syntax(this, typeLinks: false);
 				default:
 					return null;
 			}
@@ -48,9 +53,9 @@ namespace IglooCastle.CLI
 			switch (variable)
 			{
 				case "typename":
-					return Documentation.TypePrinter.Name(DeclaringType, TypePrinter.NameComponents.Name);
+					return DeclaringType.ToString("n");
 				case "args":
-					return Documentation.TypePrinter.ParameterSignature(this);
+					return ((ConstructorPrinter)GetPrinter()).ParameterSignature(this);
 				default:
 					throw new FormatException("Unknown format specifier: " + variable);
 			}
@@ -87,21 +92,6 @@ namespace IglooCastle.CLI
 			StringBuilder result = new StringBuilder();
 			ToStringLongFormat(result, format, 0);
 			return result.ToString();
-		}
-
-		public string ToHtml()
-		{
-			return Documentation.TypePrinter.Print(this);
-		}
-
-		public string ToSignature()
-		{
-			return Documentation.TypePrinter.Signature(this);
-		}
-
-		public string ToSyntax()
-		{
-			return Documentation.TypePrinter.Syntax(this);
 		}
 
 		public string Filename()

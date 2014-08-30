@@ -66,19 +66,9 @@ namespace IglooCastle.CLI
 			return isExtension;
 		}
 
-		public string ToHtml()
+		protected override PrinterBase GetPrinter()
 		{
-			return Documentation.TypePrinter.Print(this);
-		}
-
-		public string ToSignature()
-		{
-			return Documentation.TypePrinter.Signature(this);
-		}
-
-		public string ToSyntax()
-		{
-			return Documentation.TypePrinter.Syntax(this);
+			return new MethodPrinter(Documentation);
 		}
 
 		public string Filename()
@@ -91,7 +81,7 @@ namespace IglooCastle.CLI
 			switch (format)
 			{
 				case "x":
-					return Documentation.TypePrinter.Syntax(this, typeLinks: false);
+					return GetPrinter().Syntax(this, typeLinks: false);
 				default:
 					return base.ToString(format, formatProvider);
 			}

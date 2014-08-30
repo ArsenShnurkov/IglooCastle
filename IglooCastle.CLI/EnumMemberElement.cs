@@ -28,5 +28,10 @@ namespace IglooCastle.CLI
 					OwnerType.Member.FullName + "." +
 					Member.Name + "\"]");
 		}
+
+		protected override PrinterBase GetPrinter()
+		{
+			throw new NotImplementedException();
+		}
 	}
 }
