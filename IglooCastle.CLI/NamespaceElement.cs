@@ -47,7 +47,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Documentation.Types.SelectMany(m => m.Methods).ToList();
+				return Types.SelectMany(m => m.Methods).ToList();
 			}
 		}
 

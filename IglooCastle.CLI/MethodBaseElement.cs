@@ -16,5 +16,10 @@ namespace IglooCastle.CLI
 		{
 			return Member.GetParameters().Select(p => new ParameterInfoElement(Documentation, p)).ToArray();
 		}
+
+		public override MethodAttributes GetAccess()
+		{
+			return Member.GetAccess();
+		}
 	}
 }

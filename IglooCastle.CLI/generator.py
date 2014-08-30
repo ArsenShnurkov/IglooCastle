@@ -32,6 +32,13 @@ def fmt_non_empty(template, contents):
 def filter_empty(node_list):
 	return [ n for n in node_list if not n.is_content_empty() ]
 
+def flatten_single_child(node):
+	children = node.children()
+	if len(children) == 1:
+		return children[0]
+	else:
+		return node
+
 class HtmlTemplate:
 	def __init__(self):
 		self.title  = ""
@@ -263,20 +270,26 @@ class NavigationNode:
 				</tbody>
 			</table>""", "".join(method_list_item(m) for m in methods))
 
-	def widget_member_filter(self):
+	def widget_member_filter(self, show_inherited = True):
 		self.__widget_member_filter_id = self.__widget_member_filter_id + 1
 		id_inherited = "chkShowInherited%s" % self.__widget_member_filter_id
 		id_protected = "chkShowProtected%s" % self.__widget_member_filter_id
-		return """
 
+		inherited_html = ""
+		if show_inherited:
+			inherited_html = """
+				<input type="checkbox" checked="checked" class="js-show-inherited" id="%s" />
+				<label for="%s">Inherited</label>
+				""" % (id_inherited, id_inherited)
+
+		return """
 				<div>
 					Show:
-					<input type="checkbox" checked="checked" class="js-show-inherited" id="%s" />
-					<label for="%s">Inherited</label>
+					%s
 					<input type="checkbox" checked="checked" class="js-show-protected" id="%s" />
 					<label for="%s">Protected</label>
 				</div>
-			"""	% (id_inherited, id_inherited, id_protected, id_protected)
+			"""	% (inherited_html, id_protected, id_protected)
 
 
 class NavigationDocumentationNode(NavigationNode):
@@ -377,11 +390,10 @@ class NavigationTypeNode(NavigationNode):
 
 	def children(self):
 		result = filter_empty([
-			NavigationConstructorsNode(self.type_element),
+			flatten_single_child(NavigationConstructorsNode(self.type_element)),
 			NavigationPropertiesNode(self.type_element),
 			NavigationMethodsNode(self.type_element)])
 
-		# TODO: constructors node
 		# TODO: events node
 
 		return result
@@ -396,14 +408,14 @@ class NavigationTypeNode(NavigationNode):
 			fmt_non_empty("""
 				<h2>Summary</h2>
 				<p>%s</p>""", self.type_element.XmlComment.Summary()),
-			self.base_type_section(),
-			self.interfaces_section(),
-			self.derived_types_section(),
+			self.__base_type_section(),
+			self.__interfaces_section(),
+			self.__derived_types_section(),
 			self.__syntax_section(),
-			self.constructors_section(),
-			self.properties_section(),
-			self.methods_section(),
-			self.extension_methods_section()
+			self.__constructors_section(),
+			self.__properties_section(),
+			self.__methods_section(),
+			self.__extension_methods_section()
 		])
 
 		# TODO: operators
@@ -411,19 +423,10 @@ class NavigationTypeNode(NavigationNode):
 
 		return html_template
 
-	def __syntax_section(self):
-		return '<h2>Syntax</h2><code class="syntax">%s</code>' % self.type_element.ToSyntax()
+	def documentation(self):
+		return self.type_element.Documentation
 
-	def constructors_section(self):
-
-		def constructor_list_item(constructor):
-			return "<li>%s(%s)</li>" % ( self.type_element.ToString("s"), self.format_parameters(constructor) )
-
-		return fmt_non_empty(
-			"<h2>Constructors</h2><ul>%s</ul>",
-			"".join(constructor_list_item(c) for c in self.type_element.Constructors))
-
-	def base_type_section(self):
+	def __base_type_section(self):
 		base_type = self.type_element.BaseType
 
 		# check if we're documenting System.Object or a class deriving directly from System.Object
@@ -432,71 +435,54 @@ class NavigationTypeNode(NavigationNode):
 
 		return "<p>Inherits from %s</p>" % base_type.ToHtml()
 
-	def interfaces_section(self):
+	def __interfaces_section(self):
 		interfaces = self.type_element.GetInterfaces()
 		if not interfaces:
 			return ""
 
 		return "<p>Implements interfaces: %s</p>" % ", ".join(t.ToHtml() for t in interfaces)
 
-	def derived_types_section(self):
+	def __derived_types_section(self):
 		derived_types = self.type_element.GetDerivedTypes()
 		if not derived_types:
 			return ""
 
 		return "<p>Known derived types: %s</p>" % ", ".join(t.ToHtml() for t in derived_types)
 
-	def properties_section(self):
+
+	def __syntax_section(self):
+		return '<h2>Syntax</h2><code class="syntax">%s</code>' % self.type_element.ToSyntax()
+
+	def __constructors_section(self):
+		return fmt_non_empty(
+			"<h2>Constructors</h2>" + self.widget_member_filter(show_inherited = False) + "%s",
+			self.constructors_table(self.type_element.Constructors))
+
+	def __properties_section(self):
 		return fmt_non_empty(
 			"<h2>Properties</h2>" + self.widget_member_filter() + "%s",
 			self.properties_table(self.type_element.Properties))
 
-	def methods_section(self):
+	def __methods_section(self):
 		return fmt_non_empty(
 			"<h2>Methods</h2>" + self.widget_member_filter() + "%s",
 			self.methods_table(self.type_element.Methods))
 
-	def extension_methods_section(self):
+	def __extension_methods_section(self):
 		return fmt_non_empty(
 			"""
 			<h2>Extension Methods</h2>
 			%s
 			""", self.methods_table(self.type_element.ExtensionMethods))
 
-	def documentation(self):
-		return self.type_element.Documentation
-
-	def exclude_attribute(self, attribute):
-		if attribute.AttributeType.Name == "__DynamicallyInvokableAttribute":
-			return True
-
-		return attribute.IsInstance(
-			System.Runtime.CompilerServices.ExtensionAttribute,
-			System.Runtime.TargetedPatchingOptOutAttribute,
-			System.Security.SecuritySafeCriticalAttribute)
-
-	def format_attribute(self, attribute):
-		return "[" + attribute.AttributeType.ToHtml() + "]"
-
-	def format_attributes(self, attributes):
-		if not attributes:
-			return ""
-
-		return "".join(self.format_attribute(a) for a in attributes if not self.exclude_attribute(a))
-
-	def format_parameter(self, parameterInfo):
-		attributes = parameterInfo.GetCustomAttributes(False)
-		result = self.format_attributes(attributes) + \
-			parameterInfo.ParameterType.ToHtml() + \
-			" " + parameterInfo.Name
-		return result
-
-	def format_parameters(self, something):
-		print "format_parameters"
-		result = ", ".join(self.format_parameter(p) for p in something.GetParameters())
-		print "/format_parameters"
-		return result
-
+#	def exclude_attribute(self, attribute):
+#		if attribute.AttributeType.Name == "__DynamicallyInvokableAttribute":
+#			return True
+#
+#		return attribute.IsInstance(
+#			System.Runtime.CompilerServices.ExtensionAttribute,
+#			System.Runtime.TargetedPatchingOptOutAttribute,
+#			System.Security.SecuritySafeCriticalAttribute)
 
 class NavigationEnumNode(NavigationNode):
 	def __init__(self, type_element):
@@ -574,7 +560,7 @@ class NavigationTypeMembersNode(NavigationNode):
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), self.text())
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), self.text())
 		html_template.main   = fmt_non_empty(
-			self.widget_member_filter() + "%s",
+			self.widget_member_filter(show_inherited = not isinstance(self, NavigationConstructorsNode)) + "%s",
 			self.main_html_table())
 
 		return html_template
@@ -682,7 +668,7 @@ class NavigationConstructorNode(NavigationNode):
 		return self.constructor_element.Filename()
 
 	def text(self):
-		return self.constructor_element.ToSignature()
+		return self.constructor_element.ToSignature() + " Constructor"
 
 	def documentation(self):
 		return self.constructor_element.Documentation

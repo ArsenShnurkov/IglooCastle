@@ -130,7 +130,7 @@ namespace IglooCastle.CLI
 		{
 			get
 			{
-				return Type.GetConstructors()
+				return Type.GetPublicAndProtectedConstructors()
 						   .Select(c => new ConstructorElement(Documentation, this, c))
 						   .ToList();
 			}
@@ -359,10 +359,7 @@ namespace IglooCastle.CLI
 
 		public ConstructorElement GetConstructor(params TypeElement[] types)
 		{
-			return new ConstructorElement(
-				Documentation,
-				this,
-				Member.GetConstructor(types.Select(t => t.Member).ToArray()));
+			return Constructors.SingleOrDefault(c => c.GetParameters().Select(p => p.ParameterType).SequenceEqual(types));
 		}
 	}
 

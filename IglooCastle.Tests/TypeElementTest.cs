@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using IglooCastle.CLI;
 using NUnit.Framework;
+using IglooCastle.Demo;
 
 namespace IglooCastle.Tests
 {
@@ -114,8 +115,8 @@ namespace IglooCastle.Tests
 		[Test]
 		public void TestHtmlNestedClass()
 		{
-			const string expected = "<a href=\"T_IglooCastle.CLI.Documentation+Demo.html\">Documentation.Demo</a>";
-			Assert.AreEqual(expected, Documentation.Find(typeof(Documentation.Demo)).ToHtml());
+			const string expected = "<a href=\"T_IglooCastle.Demo.NestingDemo+NestedDemo.html\">NestingDemo.NestedDemo</a>";
+			Assert.AreEqual(expected, Documentation.Find(typeof(NestingDemo.NestedDemo)).ToHtml());
 		}
 
 		[Test]

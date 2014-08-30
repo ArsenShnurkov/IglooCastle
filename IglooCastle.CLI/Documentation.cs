@@ -185,10 +185,29 @@ namespace IglooCastle.CLI
 		{
 			return Namespaces.FirstOrDefault(n => n.Member == name);
 		}
+	}
+}
 
-		public sealed class Demo
+namespace IglooCastle.Demo
+{
+	public sealed class NestingDemo
+	{
+		private NestingDemo() {}
+
+		public sealed class NestedDemo
 		{
-			private Demo() {}
+			private NestedDemo() { }
+		}
+	}
+
+	public sealed class DemoMultipleConstructors
+	{
+		public DemoMultipleConstructors()
+		{
+		}
+
+		public DemoMultipleConstructors(int someValue)
+		{
 		}
 	}
 }

@@ -14,7 +14,7 @@ namespace IglooCastle.CLI
 	/// </summary>
 	public static class ReflectionExtensions
 	{
-		public static MethodAttributes GetAccess(this MethodInfo method)
+		public static MethodAttributes GetAccess(this MethodBase method)
 		{
 			return method.Attributes & (MethodAttributes.Public | MethodAttributes.Family | MethodAttributes.Assembly | MethodAttributes.FamANDAssem | MethodAttributes.FamORAssem);
 		}
@@ -104,17 +104,17 @@ namespace IglooCastle.CLI
 		}
 
 		/// <summary>
-		/// Gets the public and protected methods of this type.
+		/// Gets the public and protected constructors of this type.
 		/// </summary>
 		/// <remarks>
 		/// Typically, public and protected members are the ones that need documentation.
 		/// </remarks>
 		/// <param name="type">This type.</param>
-		/// <returns>A collection of <see cref="MethodInfo"/> instances.</returns>
-		public static IEnumerable<MethodInfo> GetPublicAndProtectedMethods(this Type type)
+		/// <returns>A collection of <see cref="ConstructorInfo"/> instances.</returns>
+		public static IEnumerable<ConstructorInfo> GetPublicAndProtectedConstructors(this Type type)
 		{
-			return type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-						   .Where(m => !m.IsSpecialName && (m.IsPublic || m.IsFamily));
+			return type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+				.Where(c => c.IsPublic || c.IsFamily);
 		}
 
 		/// <summary>
@@ -129,6 +129,20 @@ namespace IglooCastle.CLI
 		{
 			return type.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
 						   .Where(p => !p.IsSpecialName && (p.IsPublic() || p.IsFamily()));
+		}
+
+		/// <summary>
+		/// Gets the public and protected methods of this type.
+		/// </summary>
+		/// <remarks>
+		/// Typically, public and protected members are the ones that need documentation.
+		/// </remarks>
+		/// <param name="type">This type.</param>
+		/// <returns>A collection of <see cref="MethodInfo"/> instances.</returns>
+		public static IEnumerable<MethodInfo> GetPublicAndProtectedMethods(this Type type)
+		{
+			return type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+				.Where(m => !m.IsSpecialName && (m.IsPublic || m.IsFamily));
 		}
 
 		/// <summary>

@@ -135,6 +135,16 @@ namespace IglooCastle.CLI
 			return null;
 		}
 
+		private string Link(ConstructorElement constructor)
+		{
+			if (_documentation.IsLocalType(constructor.DeclaringType))
+			{
+				return _filenameProvider.Filename(constructor);
+			}
+
+			return null;
+		}
+
 		private string Escape(string link)
 		{
 			return link.Replace("`", "%60");
@@ -151,16 +161,16 @@ namespace IglooCastle.CLI
 			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), propertyElement.Name);
 		}
 
-		public string Signature(MethodElement methodInfo)
+		public string Signature(MethodElement methodElement)
 		{
 			string text;
-			if (methodInfo.IsOverload)
+			if (methodElement.IsOverload)
 			{
-				text = methodInfo.Name + "(" + string.Join(", ", methodInfo.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
+				text = methodElement.Name + "(" + string.Join(", ", methodElement.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
 			}
 			else
 			{
-				text = methodInfo.Name;
+				text = methodElement.Name;
 			}
 
 			return text;
@@ -215,7 +225,8 @@ namespace IglooCastle.CLI
 			return Join(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
 		}
 
-		private string AccessPrefix(MethodElement member)
+		private string AccessPrefix<T>(MethodBaseElement<T> member)
+			where T : MethodBase
 		{
 			if (member.ReflectedType.IsInterface)
 			{
@@ -361,17 +372,38 @@ namespace IglooCastle.CLI
 
 		public string Print(ConstructorElement constructorElement)
 		{
-			return "todo print";
+			string text = Signature(constructorElement);
+			string link = Link(constructorElement);
+			if (link == null)
+			{
+				return text;
+			}
+
+			return string.Format("<a href=\"{0}\">{1}</a>", Escape(link), text);
 		}
 
 		public string Signature(ConstructorElement constructorElement)
 		{
-			return "todo signature";
+			string text = Name(constructorElement.DeclaringType, NameComponents.Name);
+			if (constructorElement.DeclaringType.Constructors.Count() > 1)
+			{
+				text += "(" + string.Join(", ", constructorElement.GetParameters().Select(p => ShortName(p.ParameterType))) + ")";
+			}
+
+			return text;
 		}
 
-		public string Syntax(ConstructorElement constructorElement)
+		public string Syntax(ConstructorElement constructorElement, bool typeLinks = true)
 		{
-			return "todo syntax";
+			string access = AccessPrefix(constructorElement);
+			string args = string.Join(
+				", ",
+				constructorElement.GetParameters().Select((p, index) => FormatParameter(p, isExtensionThis: false, typeLinks: typeLinks)));
+			return string.Format(
+				"{0} {1}({2})",
+				access,
+				Name(constructorElement.DeclaringType, NameComponents.Name),
+				args);
 		}
 	}
 }

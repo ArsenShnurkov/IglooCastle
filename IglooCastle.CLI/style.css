@@ -50,6 +50,11 @@ nav a {
 	display: block;
 	float: left;
 	white-space: nowrap;
+	text-decoration: none;
+}
+
+nav a:hover {
+	text-decoration: underline;
 }
 
 nav li {
@@ -58,6 +63,7 @@ nav li {
 
 li.selected > a {
 	font-weight: bold;
+	color: black;
 }
 
 li.leaf > a {

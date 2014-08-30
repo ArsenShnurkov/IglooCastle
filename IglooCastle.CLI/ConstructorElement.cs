@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System;
 
 namespace IglooCastle.CLI
 {
@@ -18,6 +19,17 @@ namespace IglooCastle.CLI
 		{
 			// M:IglooCastle.CLI.NamespaceElement.#ctor(IglooCastle.CLI.Documentation)
 			return Documentation.GetMethodDocumentation(OwnerType.Type, "#ctor", Constructor.GetParameters());
+		}
+
+		public override string ToString(string format, IFormatProvider formatProvider)
+		{
+			switch (format)
+			{
+				case "x":
+					return Documentation.TypePrinter.Syntax(this, typeLinks: false);
+				default:
+					return base.ToString(format, formatProvider);
+			}
 		}
 
 		public string ToHtml()

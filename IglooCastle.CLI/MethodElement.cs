@@ -41,10 +41,6 @@ namespace IglooCastle.CLI
 			get { return Member.IsOverload(); }
 		}
 
-		public override MethodAttributes GetAccess()
-		{
-			return Member.GetAccess();
-		}
 
 		public TypeElement ReturnType
 		{
