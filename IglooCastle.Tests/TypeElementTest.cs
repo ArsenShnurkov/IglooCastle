@@ -178,10 +178,10 @@ namespace IglooCastle.Tests
 		}
 
 		[Test]
-		public void TestGetDerivedTypes()
+		public void TestGetDescendantTypes()
 		{
 			var typeElement = Documentation.Find(typeof(DocumentationElement<>));
-			var result = typeElement.GetDerivedTypes();
+			var result = typeElement.GetDescendantTypes();
 			Assert.IsNotNull(result);
 			CollectionAssert.AreEquivalent(new TypeElement[]
 			{
@@ -196,6 +196,22 @@ namespace IglooCastle.Tests
 				Documentation.Find(typeof(ReflectedElement<>)),
 				Documentation.Find(typeof(TypeElement)),
 				Documentation.Find(typeof(TypeMemberElement<>)),
+			},
+				result);
+		}
+
+		[Test]
+		public void TestGetChildTypes()
+		{
+			var typeElement = Documentation.Find(typeof(DocumentationElement<>));
+			var result = typeElement.GetChildTypes();
+			Assert.IsNotNull(result);
+			CollectionAssert.AreEquivalent(new TypeElement[]
+			{
+				Documentation.Find(typeof(AttributeElement)),
+				Documentation.Find(typeof(NamespaceElement)),
+				Documentation.Find(typeof(ParameterInfoElement)),
+				Documentation.Find(typeof(ReflectedElement<>)),
 			},
 				result);
 		}

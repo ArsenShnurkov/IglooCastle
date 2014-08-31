@@ -100,7 +100,7 @@ namespace IglooCastle.CLI
 
 		private string Link(TypeElement type)
 		{
-			if (_documentation.IsLocalType(type))
+			if (type.IsLocalType)
 			{
 				return _documentation.FilenameProvider.Filename(type);
 			}

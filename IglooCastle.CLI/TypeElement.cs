@@ -186,9 +186,14 @@ namespace IglooCastle.CLI
 			return Member.GetInterfaces().Select(t => Documentation.Find(t)).ToArray();
 		}
 
-		public ICollection<TypeElement> GetDerivedTypes()
+		public ICollection<TypeElement> GetChildTypes()
 		{
-			return Documentation.Types.Where(t => t.HasBaseType(this)).ToList();
+			return Documentation.Types.Where(t => t.IsChildTypeOf(this)).ToList();
+		}
+
+		public ICollection<TypeElement> GetDescendantTypes()
+		{
+			return Documentation.Types.Where(t => t.IsDescendantTypeOf(this)).ToList();
 		}
 
 		public TypeElement[] GetGenericArguments()
@@ -196,9 +201,9 @@ namespace IglooCastle.CLI
 			return Member.GetGenericArguments().Select(t => Documentation.Find(t)).ToArray();
 		}
 
-		public bool HasBaseType(TypeElement typeElement)
+		public bool IsChildTypeOf(TypeElement parentElement)
 		{
-			if (typeElement == null)
+			if (parentElement == null)
 			{
 				return false;
 			}
@@ -209,21 +214,37 @@ namespace IglooCastle.CLI
 				return false;
 			}
 
-			if (typeElement.Equals(myBaseType))
+			if (parentElement.Equals(myBaseType))
 			{
 				return true;
 			}
 
-			if (typeElement.IsGenericTypeDefinition && !myBaseType.IsGenericTypeDefinition && myBaseType.IsGenericType)
+			if (parentElement.IsGenericTypeDefinition && !myBaseType.IsGenericTypeDefinition && myBaseType.IsGenericType)
 			{
 				// break my base type down to a definition too
-				if (typeElement.Equals(myBaseType.GetGenericTypeDefinition()))
+				if (parentElement.Equals(myBaseType.GetGenericTypeDefinition()))
 				{
 					return true;
 				}
 			}
 
-			return myBaseType.HasBaseType(typeElement);
+			return false;
+		}
+
+		public bool IsDescendantTypeOf(TypeElement ancestorElement)
+		{
+			if (IsChildTypeOf(ancestorElement))
+			{
+				return true;
+			}
+
+			TypeElement myBaseType = BaseType;
+			if (myBaseType == null)
+			{
+				return false;
+			}
+
+			return myBaseType.IsDescendantTypeOf(ancestorElement);
 		}
 
 		/// <summary>
@@ -375,6 +396,14 @@ namespace IglooCastle.CLI
 		public ConstructorElement GetConstructor(params TypeElement[] types)
 		{
 			return Constructors.SingleOrDefault(c => c.GetParameters().Select(p => p.ParameterType).SequenceEqual(types));
+		}
+
+		public virtual bool IsLocalType
+		{
+			get
+			{
+				return true;
+			}
 		}
 	}
 }

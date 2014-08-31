@@ -78,7 +78,7 @@ class HtmlTemplate:
 	""" % (self.title, self.nav, self.h1 or self.title, self.main, self.footer)
 
 
-class NavigationNode:
+class NodeBase:
 	def __init__(self):
 		self.EXPANDER = '<span class="js-expander">-</span>'
 		self.__widget_member_filter_id = 0
@@ -292,9 +292,9 @@ class NavigationNode:
 			"""	% (inherited_html, id_protected, id_protected)
 
 
-class NavigationDocumentationNode(NavigationNode):
+class DocumentationNode(NodeBase):
 	def __init__(self, documentation):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.documentation = documentation
 
 	def href(self):
@@ -304,7 +304,7 @@ class NavigationDocumentationNode(NavigationNode):
 		return None
 
 	def children(self):
-		return [ NavigationNamespaceNode(n) for n in self.documentation.Namespaces ]
+		return [ NamespaceNode(n) for n in self.documentation.Namespaces ]
 
 	def nav_html(self):
 		return "<ol>%s</ol>" % self.children_nav_html()
@@ -313,9 +313,9 @@ class NavigationDocumentationNode(NavigationNode):
 		return self.documentation
 
 
-class NavigationNamespaceNode(NavigationNode):
+class NamespaceNode(NodeBase):
 	def __init__(self, namespace_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.namespace_element = namespace_element
 
 	def href(self):
@@ -326,9 +326,8 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def children(self):
 		result = [ self.__type_node(t) for t in self.namespace_element.Types ]
-		result.append(
-			NavigationExtensionMethodsNode(self.namespace_element)
-		)
+		result.append(ExtensionMethodsNode(self.namespace_element))
+		result.append(ClassDiagramNode(self.namespace_element))
 		result = filter_empty(result)
 		return result
 
@@ -351,9 +350,9 @@ class NavigationNamespaceNode(NavigationNode):
 
 	def __type_node(self, type_element):
 		if type_element.IsEnum:
-			return NavigationEnumNode(type_element)
+			return EnumNode(type_element)
 		else:
-			return NavigationTypeNode(type_element)
+			return TypeNode(type_element)
 
 	def __table(self, title, types):
 		def table_row(t):
@@ -377,9 +376,9 @@ class NavigationNamespaceNode(NavigationNode):
 		""", "".join(table_row(t) for t in types))
 
 
-class NavigationTypeNode(NavigationNode):
+class TypeNode(NodeBase):
 	def __init__(self, type_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.type_element = type_element
 
 	def href(self):
@@ -390,9 +389,9 @@ class NavigationTypeNode(NavigationNode):
 
 	def children(self):
 		result = filter_empty([
-			flatten_single_child(NavigationConstructorsNode(self.type_element)),
-			NavigationPropertiesNode(self.type_element),
-			NavigationMethodsNode(self.type_element)])
+			flatten_single_child(ConstructorsNode(self.type_element)),
+			PropertiesNode(self.type_element),
+			MethodsNode(self.type_element)])
 
 		# TODO: events node
 
@@ -443,7 +442,7 @@ class NavigationTypeNode(NavigationNode):
 		return "<p>Implements interfaces: %s</p>" % ", ".join(t.ToHtml() for t in interfaces)
 
 	def __derived_types_section(self):
-		derived_types = self.type_element.GetDerivedTypes()
+		derived_types = self.type_element.GetDescendantTypes()
 		if not derived_types:
 			return ""
 
@@ -484,9 +483,9 @@ class NavigationTypeNode(NavigationNode):
 #			System.Runtime.TargetedPatchingOptOutAttribute,
 #			System.Security.SecuritySafeCriticalAttribute)
 
-class NavigationEnumNode(NavigationNode):
+class EnumNode(NodeBase):
 	def __init__(self, type_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.type_element = type_element
 
 	def href(self):
@@ -541,9 +540,9 @@ class NavigationEnumNode(NavigationNode):
 		""" % "".join(html)
 
 
-class NavigationTypeMembersNode(NavigationNode):
+class TypeMembersNode(NodeBase):
 	def __init__(self, type_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.type_element = type_element
 
 	def href(self):
@@ -560,7 +559,7 @@ class NavigationTypeMembersNode(NavigationNode):
 		html_template.title  = "%s %s" % (self.type_element.ToString("f"), self.text())
 		html_template.h1     = "%s %s" % (self.type_element.ToString("s"), self.text())
 		html_template.main   = fmt_non_empty(
-			self.widget_member_filter(show_inherited = not isinstance(self, NavigationConstructorsNode)) + "%s",
+			self.widget_member_filter(show_inherited = not isinstance(self, ConstructorsNode)) + "%s",
 			self.main_html_table())
 
 		return html_template
@@ -573,51 +572,51 @@ class NavigationTypeMembersNode(NavigationNode):
 		raise NotImplementedError("override me")
 
 
-class NavigationConstructorsNode(NavigationTypeMembersNode):
+class ConstructorsNode(TypeMembersNode):
 	def __init__(self, type_element):
-		NavigationTypeMembersNode.__init__(self, type_element)
+		TypeMembersNode.__init__(self, type_element)
 
 	def text(self):
 		return "Constructors"
 
 	def children(self):
-		return [ NavigationConstructorNode(c) for c in self.type_element.Constructors ]
+		return [ ConstructorNode(c) for c in self.type_element.Constructors ]
 
 	def main_html_table(self):
 		return self.constructors_table(self.type_element.Constructors)
 
 
-class NavigationPropertiesNode(NavigationTypeMembersNode):
+class PropertiesNode(TypeMembersNode):
 	def __init__(self, type_element):
-		NavigationTypeMembersNode.__init__(self, type_element)
+		TypeMembersNode.__init__(self, type_element)
 
 	def text(self):
 		return "Properties"
 
 	def children(self):
-		return [ NavigationPropertyNode(p) for p in self.type_element.Properties if not p.IsInherited ]
+		return [ PropertyNode(p) for p in self.type_element.Properties if not p.IsInherited ]
 
 	def main_html_table(self):
 		return self.properties_table(self.type_element.Properties)
 
 
-class NavigationMethodsNode(NavigationTypeMembersNode):
+class MethodsNode(TypeMembersNode):
 	def __init__(self, type_element):
-		NavigationTypeMembersNode.__init__(self, type_element)
+		TypeMembersNode.__init__(self, type_element)
 
 	def text(self):
 		return "Methods"
 
 	def children(self):
-		return [ NavigationMethodNode(m) for m in self.type_element.Methods if not m.IsInherited ]
+		return [ MethodNode(m) for m in self.type_element.Methods if not m.IsInherited ]
 
 	def main_html_table(self):
 		return self.methods_table(self.type_element.Methods)
 
 
-class NavigationExtensionMethodsNode(NavigationNode):
+class ExtensionMethodsNode(NodeBase):
 	def __init__(self, namespace_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.namespace_element = namespace_element
 
 	def href(self):
@@ -659,9 +658,49 @@ class NavigationExtensionMethodsNode(NavigationNode):
 		return [ m for m in self.namespace_element.Methods if not m.IsInherited and m.IsExtension() ]
 
 
-class NavigationConstructorNode(NavigationNode):
+class ClassDiagramNode(NodeBase):
+	def __init__(self, namespace_element):
+		NodeBase.__init__(self)
+		self.namespace_element = namespace_element
+
+	def href(self):
+		return self.namespace_element.Filename(prefix = "ClassDiagram")
+
+	def text(self):
+		return "Class Diagram"
+
+	def documentation(self):
+		return self.namespace_element.Documentation
+
+	def contents_html_template(self):
+
+		html_template        = HtmlTemplate()
+		html_template.title  = "%s Class Diagram" % self.namespace_element.Namespace
+
+		# ignore static types
+		# take types with no base class or base class outside the documentation scope
+		root_types = [ t for t in self.namespace_element.Types if not t.IsStatic and (not t.BaseType or not t.BaseType.IsLocalType) ]
+
+		html_template.main = self.__ul(root_types)
+		return html_template
+
+	def __ul(self, types):
+		if not types:
+			return ""
+
+		result = "<ul>"
+		for t in types:
+			result += "<li>%s" % t.ToHtml()
+			result += self.__ul(t.GetChildTypes())
+			result += "</li>"
+
+		result += "</ul>"
+		return result
+
+
+class ConstructorNode(NodeBase):
 	def __init__(self, constructor_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.constructor_element = constructor_element
 
 	def href(self):
@@ -740,9 +779,9 @@ class NavigationConstructorNode(NavigationNode):
 		return ""
 
 
-class NavigationPropertyNode(NavigationNode):
+class PropertyNode(NodeBase):
 	def __init__(self, property_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.property_element = property_element
 
 	def href(self):
@@ -772,9 +811,9 @@ class NavigationPropertyNode(NavigationNode):
 		return html_template
 
 
-class NavigationMethodNode(NavigationNode):
+class MethodNode(NodeBase):
 	def __init__(self, method_element):
-		NavigationNode.__init__(self)
+		NodeBase.__init__(self)
 		self.method_element = method_element
 
 	def href(self):
@@ -888,7 +927,7 @@ def Generate(documentation):
 	"""Entry point for IglooCastle"""
 	print "Hello from python!"
 
-	root_nav_node = NavigationDocumentationNode(documentation)
+	root_nav_node = DocumentationNode(documentation)
 	nav           = root_nav_node.nav_html()
 	footer        = """Generated by IglooCastle at
 			""" + strftime("%Y-%m-%d %H:%M:%S", gmtime()) + """

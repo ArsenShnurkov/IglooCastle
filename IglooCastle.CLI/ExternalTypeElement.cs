@@ -15,5 +15,23 @@ namespace IglooCastle.CLI
 		{
 			return null;
 		}
+
+		public override bool IsLocalType
+		{
+			get
+			{
+				if (IsGenericParameter)
+				{
+					return false;
+				}
+
+				if (IsGenericType && !IsGenericTypeDefinition)
+				{
+					return GetGenericTypeDefinition().IsLocalType;
+				}
+
+				return false;
+			}
+		}
 	}
 }

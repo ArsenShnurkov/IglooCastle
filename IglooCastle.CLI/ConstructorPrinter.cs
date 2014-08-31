@@ -12,7 +12,7 @@ namespace IglooCastle.CLI
 
 		public override string Link(ConstructorElement constructor)
 		{
-			if (Documentation.IsLocalType(constructor.DeclaringType))
+			if (constructor.DeclaringType.IsLocalType)
 			{
 				return Documentation.FilenameProvider.Filename(constructor);
 			}

@@ -92,17 +92,6 @@ namespace IglooCastle.CLI
 			Console.WriteLine(assembly.Location);
 		}
 
-		public bool IsLocalType(TypeElement type)
-		{
-			var normalizedType = Normalize(type);
-			if (normalizedType.IsGenericParameter)
-			{
-				return false;
-			}
-
-			return Types.Any(t => t.Type == normalizedType.Type);
-		}
-
 		/// <summary>
 		/// Normalizes the given type element.
 		/// </summary>
