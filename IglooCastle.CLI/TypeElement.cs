@@ -188,12 +188,7 @@ namespace IglooCastle.CLI
 
 		public ICollection<TypeElement> GetDerivedTypes()
 		{
-			return Documentation.Types.Where(t =>
-				(
-					t.Type != this.Type && Type.IsAssignableFrom(t.Type))
-					||
-					t.HasBaseType(this)
-				).ToList();
+			return Documentation.Types.Where(t => t.HasBaseType(this)).ToList();
 		}
 
 		public TypeElement[] GetGenericArguments()
@@ -208,13 +203,27 @@ namespace IglooCastle.CLI
 				return false;
 			}
 
-			TypeElement baseTypeElement = BaseType;
-			while (baseTypeElement != null && baseTypeElement.Type != typeElement.Type)
+			TypeElement myBaseType = BaseType;
+			if (myBaseType == null)
 			{
-				baseTypeElement = baseTypeElement.BaseType;
+				return false;
 			}
 
-			return baseTypeElement != null;
+			if (typeElement.Equals(myBaseType))
+			{
+				return true;
+			}
+
+			if (typeElement.IsGenericTypeDefinition && !myBaseType.IsGenericTypeDefinition && myBaseType.IsGenericType)
+			{
+				// break my base type down to a definition too
+				if (typeElement.Equals(myBaseType.GetGenericTypeDefinition()))
+				{
+					return true;
+				}
+			}
+
+			return myBaseType.HasBaseType(typeElement);
 		}
 
 		/// <summary>

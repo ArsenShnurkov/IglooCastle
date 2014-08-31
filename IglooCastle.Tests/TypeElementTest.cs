@@ -45,7 +45,7 @@ namespace IglooCastle.Tests
 			var typeElement = Documentation.Find(typeof(Sample.NestedSample));
 			Assert.AreEqual("Sample.NestedSample", typeElement.ToString("s"));
 		}
-	
+
 		[Test]
 		public void TestShortNameSecondLevelNestedClass()
 		{
@@ -175,6 +175,29 @@ namespace IglooCastle.Tests
 		{
 			const string expected = "public class TypeElement : <a href=\"T_IglooCastle.CLI.ReflectedElement%601.html\">ReflectedElement</a>&lt;<a href=\"http://msdn.microsoft.com/en-us/library/system.type%28v=vs.110%29.aspx\">Type</a>&gt;, <a href=\"http://msdn.microsoft.com/en-us/library/system.iformattable%28v=vs.110%29.aspx\">IFormattable</a>";
 			Assert.AreEqual(expected, Documentation.Find(typeof(TypeElement)).ToSyntax());
+		}
+
+		[Test]
+		public void TestGetDerivedTypes()
+		{
+			var typeElement = Documentation.Find(typeof(DocumentationElement<>));
+			var result = typeElement.GetDerivedTypes();
+			Assert.IsNotNull(result);
+			CollectionAssert.AreEquivalent(new TypeElement[]
+			{
+				Documentation.Find(typeof(AttributeElement)),
+				Documentation.Find(typeof(ConstructorElement)),
+				Documentation.Find(typeof(EnumMemberElement)),
+				Documentation.Find(typeof(MethodBaseElement<>)),
+				Documentation.Find(typeof(MethodElement)),
+				Documentation.Find(typeof(NamespaceElement)),
+				Documentation.Find(typeof(ParameterInfoElement)),
+				Documentation.Find(typeof(PropertyElement)),
+				Documentation.Find(typeof(ReflectedElement<>)),
+				Documentation.Find(typeof(TypeElement)),
+				Documentation.Find(typeof(TypeMemberElement<>)),
+			},
+				result);
 		}
 	}
 }
