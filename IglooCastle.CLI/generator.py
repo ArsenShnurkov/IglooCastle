@@ -448,9 +448,26 @@ class TypeNode(NodeBase):
 
 		return "<p>Known derived types: %s</p>" % ", ".join(t.ToHtml() for t in derived_types)
 
-
 	def __syntax_section(self):
-		return '<h2>Syntax</h2><code class="syntax">%s</code>' % self.type_element.ToSyntax()
+		return "\n".join([
+			'<h2>Syntax</h2><code class="syntax">%s</code>' % self.type_element.ToSyntax(),
+			fmt_non_empty('<h3>Type parameters</h3>%s', self.__syntax_type_parameters())
+			])
+
+	def __syntax_type_parameters(self):
+		if not self.type_element.IsGenericType or not self.type_element.IsGenericTypeDefinition:
+			return ""
+
+		result = "<ul>"
+		for t in self.type_element.GetGenericArguments():
+			result += "<li>"
+			result += t.Name
+			result += self.type_element.XmlComment.TypeParam(t.Name) or "&nbsp;"
+			for constraint in t.GetGenericParameterConstraints():
+				result += constraint.ToHtml()
+			result += "</li>"
+		result += "</ul>"
+		return result
 
 	def __constructors_section(self):
 		return fmt_non_empty(

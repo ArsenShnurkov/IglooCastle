@@ -16,5 +16,10 @@
 		{
 			return xmlComment.Section("param", "name", paramName);
 		}
+
+		public static string TypeParam(this IXmlComment xmlComment, string typeParamName)
+		{
+			return xmlComment.Section("typeparam", "name", typeParamName);
+		}
 	}
 }

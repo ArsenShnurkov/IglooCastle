@@ -216,4 +216,16 @@ namespace IglooCastle.Demo
 		{
 		}
 	}
+
+	public interface IVariance<in T1, out T2>
+	{
+	}
+
+	public class GenericConstraints<T1, T2, T3> : IVariance<T1, T2>
+		where T1 : class
+		where T2 : T1, new()
+		where T3 : struct
+	{
+
+	}
 }

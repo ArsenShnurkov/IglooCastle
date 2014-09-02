@@ -201,6 +201,11 @@ namespace IglooCastle.CLI
 			return Member.GetGenericArguments().Select(t => Documentation.Find(t)).ToArray();
 		}
 
+		public TypeElement[] GetGenericParameterConstraints()
+		{
+			return Member.GetGenericParameterConstraints().Select(t => Documentation.Find(t)).ToArray();
+		}
+
 		public bool IsChildTypeOf(TypeElement parentElement)
 		{
 			if (parentElement == null)
