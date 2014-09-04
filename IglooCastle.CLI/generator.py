@@ -458,16 +458,39 @@ class TypeNode(NodeBase):
 		if not self.type_element.IsGenericType or not self.type_element.IsGenericTypeDefinition:
 			return ""
 
-		result = "<ul>"
+		result = "<dl>"
 		for t in self.type_element.GetGenericArguments():
-			result += "<li>"
+			result += "<dt>"
 			result += t.Name
-			result += self.type_element.XmlComment.TypeParam(t.Name) or "&nbsp;"
-			for constraint in t.GetGenericParameterConstraints():
-				result += constraint.ToHtml()
-			result += "</li>"
-		result += "</ul>"
+			result += "</dt>"
+			result += "<dd>"
+			result += "<p>" + (self.type_element.XmlComment.TypeParam(t.Name) or "&nbsp;") + "</p>"
+			result += "<p>" + self.__generic_argument_constraints(t) + "</p>"
+			result += "</dd>"
+		result += "</dl>"
 		return result
+
+	def __generic_argument_constraints(self, t):
+		def test(enum, flag):
+			return (enum & flag) == flag
+
+		result = []
+		ga = t.GenericParameterAttributes
+		if test(ga, System.Reflection.GenericParameterAttributes.NotNullableValueTypeConstraint):
+			result.append("struct")
+		else:
+			if test(ga, System.Reflection.GenericParameterAttributes.ReferenceTypeConstraint):
+				result.append("class")
+
+		for constraint in t.GetGenericParameterConstraints():
+			if constraint.Member != clr.GetClrType(System.ValueType):
+				result.append(t.Name + " is " + constraint.ToHtml())
+
+		if test(ga, System.Reflection.GenericParameterAttributes.DefaultConstructorConstraint) and \
+			not test(ga, System.Reflection.GenericParameterAttributes.NotNullableValueTypeConstraint):
+			result.append("new()")
+
+		return ", ".join(result)
 
 	def __constructors_section(self):
 		return fmt_non_empty(

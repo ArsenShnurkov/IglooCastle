@@ -46,7 +46,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is enum.
 		/// </summary>
 		/// <value><c>true</c> if this instance is enum; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsEnum"/>
+		/// <seealso cref="System.Type.IsEnum"/>
 		public bool IsEnum
 		{
 			get { return Member.IsEnum; }
@@ -97,7 +97,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is abstract.
 		/// </summary>
 		/// <value><c>true</c> if this instance is abstract; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsAbstract"/>
+		/// <seealso cref="System.Type.IsAbstract"/>
 		public bool IsAbstract { get { return Member.IsAbstract; } }
 
 		public bool IsSealed { get { return Member.IsSealed; } }
@@ -107,6 +107,14 @@ namespace IglooCastle.CLI
 		public bool IsGenericTypeDefinition { get { return Member.IsGenericTypeDefinition; } }
 
 		public bool IsNested { get { return Member.IsNested; } }
+
+		public GenericParameterAttributes GenericParameterAttributes
+		{
+			get
+			{
+				return Member.GenericParameterAttributes;
+			}
+		}
 
 		#endregion
 

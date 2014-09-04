@@ -228,4 +228,37 @@ namespace IglooCastle.Demo
 	{
 
 	}
+
+	[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+	public sealed class DemoAttribute : Attribute
+	{
+		private readonly string _name;
+
+		public DemoAttribute()
+		{
+		}
+
+		public DemoAttribute(string name)
+		{
+			_name = name;
+		}
+
+		public string Name
+		{
+			get { return _name; }
+		}
+
+		public int Size { get; set; }
+	}
+
+	[Demo]
+	public class AnnotatedDemo
+	{
+		[Demo]
+		public string Name { get; set; }
+
+		[Demo]
+		public void Test()
+		{ }
+	}
 }
