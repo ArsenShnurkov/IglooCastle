@@ -178,6 +178,13 @@ namespace IglooCastle.Tests
 		}
 
 		[Test]
+		public void TestSyntaxCovariance()
+		{
+			const string expected = "public interface IVariance&lt;in T1, out T2&gt;";
+			Assert.AreEqual(expected, Documentation.Find(typeof(IVariance<,>)).ToSyntax());
+		}
+
+		[Test]
 		public void TestGetDescendantTypes()
 		{
 			var typeElement = Documentation.Find(typeof(DocumentationElement<>));

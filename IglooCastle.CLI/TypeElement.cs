@@ -301,7 +301,7 @@ namespace IglooCastle.CLI
 
 			if (format == "l" || format == "L")
 			{
-				return Documentation.TypePrinter.Print(this, typeLinks: format == "l");
+				return new TypePrinter(Documentation).Print(this, typeLinks: format == "l");
 			}
 
 			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name;
@@ -316,7 +316,7 @@ namespace IglooCastle.CLI
 				nameComponents = nameComponents | TypePrinter.NameComponents.Namespace;
 			}
 
-			return Documentation.TypePrinter.Name(this, nameComponents);
+			return new TypePrinter(Documentation).Name(this, nameComponents);
 		}
 
 		public string ToHtml()
@@ -403,7 +403,7 @@ namespace IglooCastle.CLI
 
 		public string ToSyntax()
 		{
-			return Documentation.TypePrinter.Syntax(this);
+			return new TypePrinter(Documentation).Syntax(this);
 		}
 
 		public ConstructorElement GetConstructor(params TypeElement[] types)

@@ -26,18 +26,12 @@ namespace IglooCastle.CLI
 		public Documentation()
 		{
 			FilenameProvider = new FilenameProvider();
-			TypePrinter = new TypePrinter(this);
 		}
 
 		/// <summary>
 		/// Gets or sets the filename provider.
 		/// </summary>
 		internal FilenameProvider FilenameProvider { get; set; }
-
-		/// <summary>
-		/// Gets or sets the type printer.
-		/// </summary>
-		internal TypePrinter TypePrinter { get; set; }
 
 		public NamespaceElement[] Namespaces
 		{

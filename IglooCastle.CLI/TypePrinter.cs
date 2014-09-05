@@ -6,16 +6,13 @@ using System.Text;
 
 namespace IglooCastle.CLI
 {
-	internal sealed class TypePrinter
+	internal sealed class TypePrinter : PrinterBase<TypeElement, Type>
 	{
-		private readonly Documentation _documentation;
-
-		public TypePrinter(Documentation documentation)
+		public TypePrinter(Documentation documentation) : base(documentation)
 		{
-			_documentation = documentation;
 		}
 
-		public string Print(TypeElement type, bool typeLinks = true)
+		public override string Print(TypeElement type, bool typeLinks = true)
 		{
 			if (type.IsArray)
 			{
@@ -98,11 +95,11 @@ namespace IglooCastle.CLI
 			return type.Namespace == "System" || type.Namespace.StartsWith("System.");
 		}
 
-		private string Link(TypeElement type)
+		public override string Link(TypeElement type)
 		{
 			if (type.IsLocalType)
 			{
-				return _documentation.FilenameProvider.Filename(type);
+				return Documentation.FilenameProvider.Filename(type);
 			}
 
 			if (IsSystemType(type) && !type.IsGenericType)
@@ -127,7 +124,7 @@ namespace IglooCastle.CLI
 
 			if (type.IsGenericType && ((nameComponents & NameComponents.GenericArguments) == NameComponents.GenericArguments))
 			{
-				name = name + "&lt;" + string.Join(",", type.GetGenericArguments().Select(t => t.Name)) + "&gt;";
+				name = name + "&lt;" + string.Join(", ", type.GetGenericArguments().Select(t => t.Name)) + "&gt;";
 			}
 
 			if ((nameComponents & NameComponents.Namespace) == NameComponents.Namespace)
@@ -138,14 +135,48 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
-		public string Syntax(TypeElement type, bool typeLinks = true)
+		private string GenericArgumentSyntaxPrefix(TypeElement genericArgument)
+		{
+			var g = genericArgument.GenericParameterAttributes;
+			if ((g & GenericParameterAttributes.Contravariant) == GenericParameterAttributes.Contravariant)
+			{
+				return "in";
+			}
+
+			if ((g & GenericParameterAttributes.Covariant) == GenericParameterAttributes.Covariant)
+			{
+				return "out";
+			}
+
+			return string.Empty;
+		}
+
+		private string GenericArgumentSyntax(TypeElement genericArgument)
+		{
+			return " ".JoinNonEmpty(GenericArgumentSyntaxPrefix(genericArgument), genericArgument.Name);
+		}
+
+		private string NameForSyntax(TypeElement type)
+		{
+			string name = ShortName(type);
+			if (type.IsGenericType)
+			{
+				name += "&lt;"
+					+ string.Join(", ", type.GetGenericArguments().Select(GenericArgumentSyntax))
+					+ "&gt;";
+			}
+
+			return name;
+		}
+
+		public override string Syntax(TypeElement type, bool typeLinks = true)
 		{
 			string result = " ".JoinNonEmpty(
 				"public",
 				type.IsInterface ? "" :
 				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),
 				type.IsClass ? "class" : type.IsEnum ? "enum" : type.IsInterface ? "interface" : "struct",
-				type.ToString("s"));
+				NameForSyntax(type));
 
 			TypeElement baseType = type.BaseType;
 			if (baseType != null && baseType.BaseType == null)
@@ -165,12 +196,39 @@ namespace IglooCastle.CLI
 			return result;
 		}
 
-		public string Print(NamespaceElement namespaceElement)
+		public override string Signature(TypeElement element, bool typeLinks = true)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	internal sealed class NamespacePrinter : PrinterBase<NamespaceElement, string>
+	{
+		public NamespacePrinter(Documentation documentation) : base(documentation)
+		{
+		}
+
+		public override string Link(NamespaceElement element)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string Print(NamespaceElement element, bool typeLinks = true)
 		{
 			return string.Format(
 				"<a href=\"{0}\">{1}</a>",
-				_documentation.FilenameProvider.Filename(namespaceElement),
-				namespaceElement.Namespace);
+				Documentation.FilenameProvider.Filename(element),
+				element.Namespace);
+		}
+
+		public override string Syntax(NamespaceElement element, bool typeLinks = true)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string Signature(NamespaceElement element, bool typeLinks = true)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

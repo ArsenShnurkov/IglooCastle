@@ -73,7 +73,7 @@ namespace IglooCastle.CLI
 					object resolvedCref = ResolveCref(cref);
 					if (resolvedCref is TypeElement)
 					{
-						return _documentation.TypePrinter.Print((TypeElement)resolvedCref);
+						return new TypePrinter(_documentation).Print((TypeElement)resolvedCref);
 					}
 
 					return string.Format("<code>{0}</code>", cref);

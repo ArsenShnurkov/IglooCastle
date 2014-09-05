@@ -32,7 +32,7 @@ namespace IglooCastle.CLI
 
 		public string ToHtml()
 		{
-			return Documentation.TypePrinter.Print(this);
+			return new NamespacePrinter(Documentation).Print(this);
 		}
 
 		/// <summary>
