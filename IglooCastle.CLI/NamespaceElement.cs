@@ -55,5 +55,10 @@ namespace IglooCastle.CLI
 		{
 			return Documentation.FilenameProvider.Filename(this, prefix);
 		}
+
+		public string Link()
+		{
+			return Documentation.FilenameProvider.Filename(this);
+		}
 	}
 }

@@ -12,11 +12,6 @@ namespace IglooCastle.CLI
 		{
 		}
 
-		public override string Link(NamespaceElement element)
-		{
-			throw new NotImplementedException();
-		}
-
 		public override string Print(NamespaceElement element, bool typeLinks = true)
 		{
 			return string.Format(

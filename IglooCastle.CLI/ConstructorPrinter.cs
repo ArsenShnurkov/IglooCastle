@@ -10,20 +10,10 @@ namespace IglooCastle.CLI
 	{
 		public ConstructorPrinter(Documentation documentation) : base(documentation) { }
 
-		public override string Link(ConstructorElement constructor)
-		{
-			if (constructor.DeclaringType.IsLocalType)
-			{
-				return Documentation.FilenameProvider.Filename(constructor);
-			}
-
-			return null;
-		}
-
 		public override string Print(ConstructorElement constructorElement, bool typeLinks = true)
 		{
 			string text = Signature(constructorElement);
-			string link = Link(constructorElement);
+			string link = constructorElement.Link();
 			if (link == null)
 			{
 				return text;
@@ -37,7 +27,7 @@ namespace IglooCastle.CLI
 			string access = AccessPrefix(constructorElement);
 			string args = Parameters(constructorElement, typeLinks);
 			return " ".JoinNonEmpty(
-				SyntaxOfAttributes(constructorElement),
+				SyntaxOfAttributes(constructorElement, typeLinks),
 				access,
 				string.Format(
 					"{0}({1})",

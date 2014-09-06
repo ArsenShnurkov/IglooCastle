@@ -114,5 +114,15 @@ namespace IglooCastle.CLI
 		{
 			return Documentation.PrinterFactory.GetPropertyPrinter();
 		}
+
+		public string Link()
+		{
+			if (DeclaringType.IsLocalType)
+			{
+				return Documentation.FilenameProvider.Filename(this);
+			}
+
+			return null;
+		}
 	}
 }

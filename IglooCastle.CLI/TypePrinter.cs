@@ -48,7 +48,7 @@ namespace IglooCastle.CLI
 
 		private string DoPrint(TypeElement type, bool typeLinks)
 		{
-			string link = Link(type);
+			string link = type.Link();
 			string text = link != null ? ShortName(type) : FullName(type);
 			if (link != null && typeLinks)
 			{
@@ -89,26 +89,6 @@ namespace IglooCastle.CLI
 			}
 
 			return SystemTypes.Alias(type) ?? type.Name;
-		}
-
-		private bool IsSystemType(TypeElement type)
-		{
-			return type.Namespace == "System" || type.Namespace.StartsWith("System.");
-		}
-
-		public override string Link(TypeElement type)
-		{
-			if (type.IsLocalType)
-			{
-				return Documentation.FilenameProvider.Filename(type);
-			}
-
-			if (IsSystemType(type) && !type.IsGenericType)
-			{
-				return string.Format("http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx", type.Member.FullName.ToLowerInvariant());
-			}
-
-			return null;
 		}
 
 		[Flags]
@@ -173,7 +153,7 @@ namespace IglooCastle.CLI
 		public override string Syntax(TypeElement type, bool typeLinks = true)
 		{
 			string result = " ".JoinNonEmpty(
-				SyntaxOfAttributes(type),
+				SyntaxOfAttributes(type, typeLinks),
 				"public",
 				type.IsInterface ? "" :
 				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),

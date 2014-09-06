@@ -31,5 +31,15 @@ namespace IglooCastle.CLI
 		{
 			return Documentation.FilenameProvider.Filename(this);
 		}
+
+		public string Link()
+		{
+			if (DeclaringType.IsLocalType)
+			{
+				return Documentation.FilenameProvider.Filename(this);
+			}
+
+			return null;
+		}
 	}
 }

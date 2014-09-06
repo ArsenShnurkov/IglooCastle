@@ -30,5 +30,10 @@ namespace IglooCastle.CLI
 		{
 			return new MethodPrinter(_documentation);
 		}
+
+		public IPrinter GetCustomAttributeDataPrinter()
+		{
+			return new CustomAttributeDataPrinter(_documentation);
+		}
 	}
 }

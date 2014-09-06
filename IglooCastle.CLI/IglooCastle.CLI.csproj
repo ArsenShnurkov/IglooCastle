@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConstructorElement.cs" />
+    <Compile Include="CustomAttributeDataPrinter.cs" />
     <Compile Include="Documentation.cs" />
     <Compile Include="DocumentationElement.cs" />
     <Compile Include="Elements.cs" />

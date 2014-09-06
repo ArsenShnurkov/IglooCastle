@@ -188,6 +188,13 @@ namespace IglooCastle.Tests
 		public void TestSyntaxAnnotatedDemo()
 		{
 			const string expected = "[Demo] public class AnnotatedDemo";
+			Assert.AreEqual(expected, Documentation.Find(typeof(AnnotatedDemo)).ToSyntax(typeLinks: false));
+		}
+
+		[Test]
+		public void TestSyntaxWithLinksAnnotatedDemo()
+		{
+			const string expected = "[<a href=\"T_IglooCastle.Demo.DemoAttribute.html\">Demo</a>] public class AnnotatedDemo";
 			Assert.AreEqual(expected, Documentation.Find(typeof(AnnotatedDemo)).ToSyntax());
 		}
 

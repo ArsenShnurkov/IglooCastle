@@ -350,6 +350,28 @@ namespace IglooCastle.CLI
 			}
 		}
 
+		private bool IsSystemType()
+		{
+			return Namespace == "System" || Namespace.StartsWith("System.");
+		}
+
+		public string Link()
+		{
+			if (IsLocalType)
+			{
+				return Documentation.FilenameProvider.Filename(this);
+			}
+
+			if (IsSystemType() && !IsGenericType)
+			{
+				return string.Format(
+					"http://msdn.microsoft.com/en-us/library/{0}%28v=vs.110%29.aspx",
+					Member.FullName.ToLowerInvariant());
+			}
+
+			return null;
+		}
+
 		protected override IPrinter GetPrinter()
 		{
 			return Documentation.PrinterFactory.GetTypePrinter();

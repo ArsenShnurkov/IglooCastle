@@ -10,19 +10,9 @@ namespace IglooCastle.CLI
 	{
 		public PropertyPrinter(Documentation documentation) : base(documentation) { }
 
-		public override string Link(PropertyElement property)
-		{
-			if (property.DeclaringType.IsLocalType)
-			{
-				return Documentation.FilenameProvider.Filename(property);
-			}
-
-			return null;
-		}
-
 		public override string Print(PropertyElement property, bool typeLinks = true)
 		{
-			string link = Link(property);
+			string link = property.Link();
 			if (link == null)
 			{
 				return property.Name;
@@ -46,7 +36,7 @@ namespace IglooCastle.CLI
 			var maxAccess = ReflectionExtensions.Max(getterAccess, setterAccess);
 
 			return " ".JoinNonEmpty(
-				SyntaxOfAttributes(property),
+				SyntaxOfAttributes(property, typeLinks),
 				maxAccess.ToAccessString(),
 				property.PropertyType.ToHtml(typeLinks),
 				property.Name,

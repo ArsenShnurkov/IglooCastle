@@ -10,20 +10,10 @@ namespace IglooCastle.CLI
 	{
 		public MethodPrinter(Documentation documentation) : base(documentation) { }
 
-		public override string Link(MethodElement method)
-		{
-			if (method.DeclaringType.IsLocalType)
-			{
-				return Documentation.FilenameProvider.Filename(method);
-			}
-
-			return null;
-		}
-
 		public override string Print(MethodElement methodInfo, bool typeLinks = true)
 		{
 			string text = Signature(methodInfo);
-			string link = Link(methodInfo);
+			string link = methodInfo.Link();
 			if (link == null)
 			{
 				return text;
@@ -54,7 +44,7 @@ namespace IglooCastle.CLI
 			string returnType = method.ReturnType.ToHtml(typeLinks);
 			string args = Parameters(method, typeLinks);
 			return " ".JoinNonEmpty(
-				SyntaxOfAttributes(method),
+				SyntaxOfAttributes(method, typeLinks),
 				access,
 				modifiers,
 				returnType,

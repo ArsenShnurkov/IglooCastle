@@ -81,5 +81,15 @@ namespace IglooCastle.CLI
 		}
 
 		public bool IsFinal { get { return Member.IsFinal; } }
+
+		public string Link()
+		{
+			if (DeclaringType.IsLocalType)
+			{
+				return Documentation.FilenameProvider.Filename(this);
+			}
+
+			return null;
+		}
 	}
 }

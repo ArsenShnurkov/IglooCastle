@@ -8,11 +8,6 @@ namespace IglooCastle.CLI
 {
 	class StubPrinter : IPrinter
 	{
-		public string Link(object element)
-		{
-			throw new NotImplementedException();
-		}
-
 		public string Print(object element, bool typeLinks = true)
 		{
 			throw new NotImplementedException();
