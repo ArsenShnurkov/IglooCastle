@@ -202,5 +202,27 @@ namespace IglooCastle.CLI
 		{
 			throw new NotImplementedException();
 		}
+
+		public override string Format(TypeElement element, string format)
+		{
+			if (format != "n" && format != "s" && format != "f")
+			{
+				return base.Format(element, format);
+			}
+
+			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name;
+
+			if (format != "n")
+			{
+				nameComponents |= TypePrinter.NameComponents.GenericArguments;
+			}
+
+			if (format == "f")
+			{
+				nameComponents = nameComponents | TypePrinter.NameComponents.Namespace;
+			}
+
+			return Name(element, nameComponents);
+		}
 	}
 }

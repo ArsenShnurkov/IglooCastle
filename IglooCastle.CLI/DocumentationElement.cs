@@ -59,9 +59,9 @@ namespace IglooCastle.CLI
 			return Member.GetHashCode();
 		}
 
-		public virtual string ToString(string format, IFormatProvider formatProvider)
+		public string ToString(string format, IFormatProvider formatProvider)
 		{
-			return Member.ToString();
+			return GetPrinter().Format(this, format);
 		}
 
 		public string ToString(string format)
@@ -71,15 +71,27 @@ namespace IglooCastle.CLI
 
 		public sealed override string ToString()
 		{
-			return ToString(null);
+			return Member.ToString();
 		}
-	}
 
-	public interface ICodeFormattable
-	{
-		// ToString(s), ToString(f)
-		string ToSyntax();
-		string ToHtml();
-		string ToSignature();
+		public string ToSyntax(bool typeLinks = true)
+		{
+			return GetPrinter().Syntax(this, typeLinks);
+		}
+
+		public string ToHtml(bool typeLinks = true)
+		{
+			return GetPrinter().Print(this, typeLinks);
+		}
+
+		public string ToSignature(bool typeLinks = true)
+		{
+			return GetPrinter().Signature(this, typeLinks);
+		}
+
+		protected virtual IPrinter GetPrinter()
+		{
+			return new StubPrinter();
+		}
 	}
 }

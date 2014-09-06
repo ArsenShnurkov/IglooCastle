@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IglooCastle.CLI
 {
@@ -27,11 +25,6 @@ namespace IglooCastle.CLI
 			return Documentation.GetXmlComment("//member[@name=\"F:" +
 					OwnerType.Member.FullName + "." +
 					Member.Name + "\"]");
-		}
-
-		protected override PrinterBase GetPrinter()
-		{
-			throw new NotImplementedException();
 		}
 	}
 }

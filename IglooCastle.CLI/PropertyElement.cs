@@ -110,9 +110,9 @@ namespace IglooCastle.CLI
 			return result;
 		}
 
-		protected override PrinterBase GetPrinter()
+		protected override IPrinter GetPrinter()
 		{
-			return new PropertyPrinter(Documentation);
+			return Documentation.PrinterFactory.GetPropertyPrinter();
 		}
 	}
 }

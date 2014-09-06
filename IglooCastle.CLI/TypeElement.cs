@@ -36,7 +36,7 @@ namespace IglooCastle.CLI
 		/// Gets the assembly.
 		/// </summary>
 		/// <value>The assembly.</value>
-		/// <seealso cref="Type.Assembly"/>
+		/// <seealso cref="System.Type.Assembly"/>
 		public Assembly Assembly
 		{
 			get { return Member.Assembly; }
@@ -56,7 +56,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is class.
 		/// </summary>
 		/// <value><c>true</c> if this instance is class; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsClass"/>
+		/// <seealso cref="System.Type.IsClass"/>
 		public bool IsClass
 		{
 			get { return Member.IsClass; }
@@ -66,7 +66,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is interface.
 		/// </summary>
 		/// <value><c>true</c> if this instance is interface; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsInterface"/>
+		/// <seealso cref="System.Type.IsInterface"/>
 		public bool IsInterface
 		{
 			get { return Member.IsInterface; }
@@ -76,7 +76,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is generic type.
 		/// </summary>
 		/// <value><c>true</c> if this instance is generic type; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsGenericType"/>
+		/// <seealso cref="System.Type.IsGenericType"/>
 		public bool IsGenericType
 		{
 			get { return Member.IsGenericType; }
@@ -88,7 +88,7 @@ namespace IglooCastle.CLI
 		/// Gets a value indicating whether this instance is array.
 		/// </summary>
 		/// <value><c>true</c> if this instance is array; otherwise, <c>false</c>.</value>
-		/// <seealso cref="Type.IsArray"/>
+		/// <seealso cref="System.Type.IsArray"/>
 		public bool IsArray { get { return Member.IsArray; } }
 
 		public bool IsByRef { get { return Member.IsByRef; } }
@@ -260,70 +260,6 @@ namespace IglooCastle.CLI
 			return myBaseType.IsDescendantTypeOf(ancestorElement);
 		}
 
-		/// <summary>
-		/// Uses <see cref="TypePrinter" /> to print this type's name.
-		/// </summary>
-		/// <param name="format">Controls the output options. See remarks section.</param>
-		/// <returns>A string representing this type element.</returns>
-		/// <remarks>
-		/// 	<paramref name="format" /> can be:
-		/// 	<list type="table">
-		/// 		<listheader>
-		/// 			<term>Value</term>
-		/// 			<description>Output</description>
-		/// 		</listheader>
-		/// 		<item>
-		/// 			<term><c>null</c></term>
-		/// 			<description>The containing type's ToString method is called as-is.</description>
-		/// 		</item>
-		/// 		<item>
-		/// 			<term><c>"s"</c></term>
-		/// 			<description>The short name is returned (without namespace).</description>
-		/// 		</item>
-		/// 		<item>
-		/// 			<term><c>"f"</c></term>
-		/// 			<description>The full name is returned (with namespace).</description>
-		/// 		</item>
-		/// 	</list>
-		/// </remarks>
-		/// <example>
-		/// 	This example prints the full name of a type element:
-		/// 	<code>
-		/// 	Console.WriteLine(typeElement.ToString("f"));
-		/// 	</code>
-		/// </example>
-		public override string ToString(string format, IFormatProvider formatProvider)
-		{
-			if (format == null)
-			{
-				return Member.ToString();
-			}
-
-			if (format == "l" || format == "L")
-			{
-				return new TypePrinter(Documentation).Print(this, typeLinks: format == "l");
-			}
-
-			TypePrinter.NameComponents nameComponents = TypePrinter.NameComponents.Name;
-
-			if (format != "n")
-			{
-				nameComponents |= TypePrinter.NameComponents.GenericArguments;
-			}
-
-			if (format == "f")
-			{
-				nameComponents = nameComponents | TypePrinter.NameComponents.Namespace;
-			}
-
-			return new TypePrinter(Documentation).Name(this, nameComponents);
-		}
-
-		public string ToHtml(bool typeLinks = true)
-		{
-			return new TypePrinter(Documentation).Print(this, typeLinks);
-		}
-
 		public string TypeKind
 		{
 			get
@@ -401,11 +337,6 @@ namespace IglooCastle.CLI
 			return Properties.SingleOrDefault(p => p.Name == propertyName);
 		}
 
-		public string ToSyntax()
-		{
-			return new TypePrinter(Documentation).Syntax(this);
-		}
-
 		public ConstructorElement GetConstructor(params TypeElement[] types)
 		{
 			return Constructors.SingleOrDefault(c => c.GetParameters().Select(p => p.ParameterType).SequenceEqual(types));
@@ -417,6 +348,11 @@ namespace IglooCastle.CLI
 			{
 				return true;
 			}
+		}
+
+		protected override IPrinter GetPrinter()
+		{
+			return Documentation.PrinterFactory.GetTypePrinter();
 		}
 	}
 }

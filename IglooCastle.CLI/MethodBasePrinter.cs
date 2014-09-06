@@ -95,7 +95,7 @@ namespace IglooCastle.CLI
 				@params,
 				byref,
 				thisparam,
-				type.ToString(typeLinks ? "l" : "L"),
+				type.ToHtml(typeLinks),
 				parameterInfo.Name);
 
 			return result;

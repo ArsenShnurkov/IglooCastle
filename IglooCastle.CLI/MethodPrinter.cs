@@ -51,7 +51,7 @@ namespace IglooCastle.CLI
 		{
 			string access = AccessPrefix(method);
 			string modifiers = Modifiers(method);
-			string returnType = method.ReturnType.ToString(typeLinks ? "l" : "L");
+			string returnType = method.ReturnType.ToHtml(typeLinks);
 			string args = Parameters(method, typeLinks);
 			return " ".JoinNonEmpty(
 				SyntaxOfAttributes(method),

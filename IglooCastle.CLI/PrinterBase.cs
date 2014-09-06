@@ -7,7 +7,7 @@ using System.Text;
 
 namespace IglooCastle.CLI
 {
-	public abstract class PrinterBase
+	public abstract class PrinterBase : IPrinter
 	{
 		private readonly Documentation _documentation;
 
@@ -22,6 +22,7 @@ namespace IglooCastle.CLI
 		public abstract string Print(object element, bool typeLinks = true);
 		public abstract string Syntax(object element, bool typeLinks = true);
 		public abstract string Signature(object element, bool typeLinks = true);
+		public abstract string Format(object element, string format);
 	}
 
 	abstract class PrinterBase<T,TMember> : PrinterBase
@@ -33,6 +34,19 @@ namespace IglooCastle.CLI
 		public abstract string Print(T element, bool typeLinks = true);
 		public abstract string Syntax(T element, bool typeLinks = true);
 		public abstract string Signature(T element, bool typeLinks = true);
+
+		public virtual string Format(T element, string format)
+		{
+			switch (format)
+			{
+				case "x":
+					return Syntax(element, typeLinks: false);
+				case "X":
+					return Syntax(element, typeLinks: true);
+				default:
+					return element.Member.ToString();
+			}
+		}
 
 		#region implemented abstract members of PrinterBase
 
@@ -54,6 +68,11 @@ namespace IglooCastle.CLI
 		public sealed override string Signature(object element, bool typeLinks = true)
 		{
 			return Signature((T)element, typeLinks);
+		}
+
+		public sealed override string Format(object element, string format)
+		{
+			return Format((T)element, format);
 		}
 
 		#endregion

@@ -55,19 +55,5 @@ namespace IglooCastle.CLI
 		{
 			return Documentation.FilenameProvider.Filename(this, prefix);
 		}
-
-		#region IFormattable implementation
-
-		public override string ToString(string format, IFormatProvider formatProvider)
-		{
-			if (format == "h")
-			{
-				return ToHtml();
-			}
-
-			throw new FormatException();
-		}
-
-		#endregion
 	}
 }

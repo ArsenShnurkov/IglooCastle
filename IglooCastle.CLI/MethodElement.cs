@@ -65,9 +65,9 @@ namespace IglooCastle.CLI
 			return isExtension;
 		}
 
-		protected override PrinterBase GetPrinter()
+		protected override IPrinter GetPrinter()
 		{
-			return new MethodPrinter(Documentation);
+			return Documentation.PrinterFactory.GetMethodPrinter();
 		}
 
 		public string Filename()

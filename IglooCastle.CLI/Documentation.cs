@@ -26,7 +26,10 @@ namespace IglooCastle.CLI
 		public Documentation()
 		{
 			FilenameProvider = new FilenameProvider();
+			PrinterFactory = new PrinterFactory(this);
 		}
+
+		public IPrinterFactory PrinterFactory { get; set; }
 
 		/// <summary>
 		/// Gets or sets the filename provider.
