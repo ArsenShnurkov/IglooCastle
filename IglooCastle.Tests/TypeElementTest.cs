@@ -185,6 +185,13 @@ namespace IglooCastle.Tests
 		}
 
 		[Test]
+		public void TestSyntaxAnnotatedDemo()
+		{
+			const string expected = "[Demo] public class AnnotatedDemo";
+			Assert.AreEqual(expected, Documentation.Find(typeof(AnnotatedDemo)).ToSyntax());
+		}
+
+		[Test]
 		public void TestGetDescendantTypes()
 		{
 			var typeElement = Documentation.Find(typeof(DocumentationElement<>));
@@ -194,6 +201,7 @@ namespace IglooCastle.Tests
 			{
 				Documentation.Find(typeof(AttributeElement)),
 				Documentation.Find(typeof(ConstructorElement)),
+				Documentation.Find(typeof(CustomAttributeDataElement)),
 				Documentation.Find(typeof(EnumMemberElement)),
 				Documentation.Find(typeof(MethodBaseElement<>)),
 				Documentation.Find(typeof(MethodElement)),
@@ -216,6 +224,7 @@ namespace IglooCastle.Tests
 			CollectionAssert.AreEquivalent(new TypeElement[]
 			{
 				Documentation.Find(typeof(AttributeElement)),
+				Documentation.Find(typeof(CustomAttributeDataElement)),
 				Documentation.Find(typeof(NamespaceElement)),
 				Documentation.Find(typeof(ParameterInfoElement)),
 				Documentation.Find(typeof(ReflectedElement<>)),

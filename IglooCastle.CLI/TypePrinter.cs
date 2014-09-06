@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace IglooCastle.CLI
 {
@@ -169,9 +170,36 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
+		private bool IsSpecialAttribute(CustomAttributeDataElement attribute)
+		{
+			return attribute.AttributeType.Member == typeof(ExtensionAttribute);
+		}
+
+		private string AttributeForSyntax(CustomAttributeDataElement attribute)
+		{
+			if (IsSpecialAttribute(attribute))
+			{
+				return string.Empty;
+			}
+
+			string name = attribute.AttributeType.Name;
+			if (name.EndsWith("Attribute"))
+			{
+				name = name.Substring(0, name.Length - "Attribute".Length);
+			}
+
+			return "[" + name + "]";
+		}
+
+		private string AttributesForSyntax(TypeElement type)
+		{
+			return string.Join("", type.GetCustomAttributesData().Select(AttributeForSyntax));
+		}
+
 		public override string Syntax(TypeElement type, bool typeLinks = true)
 		{
 			string result = " ".JoinNonEmpty(
+				AttributesForSyntax(type),
 				"public",
 				type.IsInterface ? "" :
 				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),
@@ -197,36 +225,6 @@ namespace IglooCastle.CLI
 		}
 
 		public override string Signature(TypeElement element, bool typeLinks = true)
-		{
-			throw new NotImplementedException();
-		}
-	}
-
-	internal sealed class NamespacePrinter : PrinterBase<NamespaceElement, string>
-	{
-		public NamespacePrinter(Documentation documentation) : base(documentation)
-		{
-		}
-
-		public override string Link(NamespaceElement element)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override string Print(NamespaceElement element, bool typeLinks = true)
-		{
-			return string.Format(
-				"<a href=\"{0}\">{1}</a>",
-				Documentation.FilenameProvider.Filename(element),
-				element.Namespace);
-		}
-
-		public override string Syntax(NamespaceElement element, bool typeLinks = true)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override string Signature(NamespaceElement element, bool typeLinks = true)
 		{
 			throw new NotImplementedException();
 		}

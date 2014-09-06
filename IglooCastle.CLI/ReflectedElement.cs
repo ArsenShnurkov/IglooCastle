@@ -58,6 +58,11 @@ namespace IglooCastle.CLI
 			return Member.GetCustomAttributes(inherit).Cast<Attribute>().Select(a => new AttributeElement(Documentation, a));
 		}
 
+		public IEnumerable<CustomAttributeDataElement> GetCustomAttributesData()
+		{
+			return Member.GetCustomAttributesData().Select(a => new CustomAttributeDataElement(Documentation, a)).ToList();
+		}
+
 		protected abstract IXmlComment GetXmlComment();
 	}
 }

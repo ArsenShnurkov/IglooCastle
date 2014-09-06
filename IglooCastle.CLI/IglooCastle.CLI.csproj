@@ -101,6 +101,9 @@
     <Compile Include="MethodBasePrinter.cs" />
     <Compile Include="ConstructorPrinter.cs" />
     <Compile Include="MethodPrinter.cs" />
+    <Compile Include="NamespacePrinter.cs" />
+    <Compile Include="Demo.cs" />
+    <Compile Include="CustomAttributeDataElement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
