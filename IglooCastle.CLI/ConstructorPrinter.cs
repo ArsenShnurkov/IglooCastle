@@ -36,11 +36,14 @@ namespace IglooCastle.CLI
 		{
 			string access = AccessPrefix(constructorElement);
 			string args = Parameters(constructorElement, typeLinks);
-			return string.Format(
-				"{0} {1}({2})",
+			return " ".JoinNonEmpty(
+				SyntaxOfAttributes(constructorElement),
 				access,
-				constructorElement.DeclaringType.ToString("n"),
-				args);
+				string.Format(
+					"{0}({1})",
+					constructorElement.DeclaringType.ToString("n"),
+					args)
+				);
 		}
 
 		public override string Signature(ConstructorElement constructorElement, bool typeLinks = true)

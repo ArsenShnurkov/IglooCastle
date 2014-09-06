@@ -33,6 +33,24 @@ namespace IglooCastle.CLI
 
 		protected abstract PrinterBase GetPrinter();
 
+		public override string ToString(string format, IFormatProvider formatProvider)
+		{
+			if (string.IsNullOrEmpty(format))
+			{
+				return base.ToString(format, formatProvider);
+			}
+
+			switch (format)
+			{
+				case "x":
+					return GetPrinter().Syntax(this, typeLinks: false);
+				case "X":
+					return GetPrinter().Syntax(this, typeLinks: true);
+				default:
+					return base.ToString(format, formatProvider);
+			}
+		}
+
 		public string ToSignature()
 		{
 			return GetPrinter().Signature(this);

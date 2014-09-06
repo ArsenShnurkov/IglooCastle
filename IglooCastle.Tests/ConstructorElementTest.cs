@@ -67,5 +67,13 @@ namespace IglooCastle.Tests
 				"DemoMultipleConstructors Constructor(int)",
 				constructorElement.ToString("{typename} Constructor{args}"));
 		}
+
+		[Test]
+		public void TestSyntaxWithoutLinksAnnotatedConstructor()
+		{
+			const string expected = @"[Demo(Size = 10)] public AnnotatedDemo()";
+			ConstructorElement constructorElement = Documentation.Find(typeof(AnnotatedDemo)).GetConstructor();
+			Assert.AreEqual(expected, constructorElement.ToString("x"));
+		}
 	}
 }

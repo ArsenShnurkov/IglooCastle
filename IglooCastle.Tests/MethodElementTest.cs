@@ -1,4 +1,5 @@
 ﻿using IglooCastle.CLI;
+using IglooCastle.Demo;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -127,6 +128,14 @@ namespace IglooCastle.Tests
 			var method = Documentation.Find(typeof(XmlCommentExtensions))
 				.GetMethod("Summary");
 			Assert.AreEqual(expected, method.ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithoutLinksAnnotatedMethod()
+		{
+			const string expected = @"[Demo(""name"", Size = 42)] public void Test()";
+			var method = Documentation.Find(typeof(AnnotatedDemo)).GetMethod("Test");
+			Assert.AreEqual(expected, method.ToString("x"));
 		}
 	}
 }

@@ -53,7 +53,12 @@ namespace IglooCastle.CLI
 			string modifiers = Modifiers(method);
 			string returnType = method.ReturnType.ToString(typeLinks ? "l" : "L");
 			string args = Parameters(method, typeLinks);
-			return " ".JoinNonEmpty(access, modifiers, returnType, method.Name).TrimStart(' ') + "(" + args + ")";
+			return " ".JoinNonEmpty(
+				SyntaxOfAttributes(method),
+				access,
+				modifiers,
+				returnType,
+				method.Name) + "(" + args + ")";
 		}
 	}
 }

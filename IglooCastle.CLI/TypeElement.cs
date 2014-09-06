@@ -319,9 +319,9 @@ namespace IglooCastle.CLI
 			return new TypePrinter(Documentation).Name(this, nameComponents);
 		}
 
-		public string ToHtml()
+		public string ToHtml(bool typeLinks = true)
 		{
-			return ToString("l");
+			return new TypePrinter(Documentation).Print(this, typeLinks);
 		}
 
 		public string TypeKind

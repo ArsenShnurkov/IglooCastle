@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace IglooCastle.CLI
@@ -56,5 +57,11 @@ namespace IglooCastle.CLI
 		}
 
 		#endregion
+
+		protected string SyntaxOfAttributes<TElement>(ReflectedElement<TElement> element)
+			where TElement : MemberInfo
+		{
+			return string.Join("", element.GetCustomAttributesData().Select(c => c.ToSyntax()));
+		}
 	}
 }

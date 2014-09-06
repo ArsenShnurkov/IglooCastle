@@ -42,7 +42,6 @@ namespace IglooCastle.CLI
 			get { return Member.IsOverload(); }
 		}
 
-
 		public TypeElement ReturnType
 		{
 			get { return Documentation.Find(Member.ReturnType); }
@@ -74,17 +73,6 @@ namespace IglooCastle.CLI
 		public string Filename()
 		{
 			return Documentation.FilenameProvider.Filename(this);
-		}
-
-		public override string ToString(string format, IFormatProvider formatProvider)
-		{
-			switch (format)
-			{
-				case "x":
-					return GetPrinter().Syntax(this, typeLinks: false);
-				default:
-					return base.ToString(format, formatProvider);
-			}
 		}
 
 		protected override IXmlComment GetXmlComment()

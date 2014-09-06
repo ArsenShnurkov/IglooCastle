@@ -46,8 +46,9 @@ namespace IglooCastle.CLI
 			var maxAccess = ReflectionExtensions.Max(getterAccess, setterAccess);
 
 			return " ".JoinNonEmpty(
+				SyntaxOfAttributes(property),
 				maxAccess.ToAccessString(),
-				property.PropertyType.ToHtml(),
+				property.PropertyType.ToHtml(typeLinks),
 				property.Name,
 				"{",
 				getter != null && !getter.IsPrivate ? ((getterAccess != maxAccess) ? getterAccess.ToAccessString() + " " : "") + "get;" : "",

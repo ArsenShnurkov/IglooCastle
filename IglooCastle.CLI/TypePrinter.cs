@@ -170,36 +170,10 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
-		private bool IsSpecialAttribute(CustomAttributeDataElement attribute)
-		{
-			return attribute.AttributeType.Member == typeof(ExtensionAttribute);
-		}
-
-		private string AttributeForSyntax(CustomAttributeDataElement attribute)
-		{
-			if (IsSpecialAttribute(attribute))
-			{
-				return string.Empty;
-			}
-
-			string name = attribute.AttributeType.Name;
-			if (name.EndsWith("Attribute"))
-			{
-				name = name.Substring(0, name.Length - "Attribute".Length);
-			}
-
-			return "[" + name + "]";
-		}
-
-		private string AttributesForSyntax(TypeElement type)
-		{
-			return string.Join("", type.GetCustomAttributesData().Select(AttributeForSyntax));
-		}
-
 		public override string Syntax(TypeElement type, bool typeLinks = true)
 		{
 			string result = " ".JoinNonEmpty(
-				AttributesForSyntax(type),
+				SyntaxOfAttributes(type),
 				"public",
 				type.IsInterface ? "" :
 				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),

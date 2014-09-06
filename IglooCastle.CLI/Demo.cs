@@ -77,6 +77,10 @@ namespace IglooCastle.Demo
 	[Demo]
 	public class AnnotatedDemo
 	{
+		[Demo(Size = 10)]
+		public AnnotatedDemo()
+		{ }
+
 		[Demo("name")]
 		public string Name { get; set; }
 

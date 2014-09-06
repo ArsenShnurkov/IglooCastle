@@ -1,4 +1,5 @@
 ﻿using IglooCastle.CLI;
+using IglooCastle.Demo;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,15 @@ namespace IglooCastle.Tests
 			Assert.AreEqual(
 				expected,
 				Documentation.Find(typeof(DocumentationElement<>)).GetProperty("Member").ToSyntax());
+		}
+
+		[Test]
+		public void TestSyntaxWithoutLinksAnnotatedProperty()
+		{
+			const string expected = "[Demo(\"name\")] public string Name { get; set; }";
+			Assert.AreEqual(
+				expected,
+				Documentation.Find(typeof(AnnotatedDemo)).GetProperty("Name").ToString("x"));
 		}
 	}
 }
