@@ -11,7 +11,8 @@ namespace IglooCastle.CLI
 				{ typeof(bool), "bool" },
 				{ typeof(int), "int" },
 				{ typeof(void), "void"},
-				{ typeof(object), "object" }
+				{ typeof(object), "object" },
+				{ typeof(double), "double" }
 			};
 
 		public static string Alias(Type type)

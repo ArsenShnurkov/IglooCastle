@@ -25,6 +25,11 @@ namespace IglooCastle.CLI
 				return Print(type.GetElementType(), typeLinks);
 			}
 
+			if (type.IsNullable)
+			{
+				return Print(type.GetNullableType(), typeLinks) + "?";
+			}
+
 			string result;
 
 			if (type.IsGenericType && !type.IsGenericParameter && !type.IsGenericTypeDefinition)
@@ -150,25 +155,35 @@ namespace IglooCastle.CLI
 			return name;
 		}
 
-		public override string Syntax(TypeElement type, bool typeLinks = true)
+		private TypeElement BaseTypeForSyntax(TypeElement type)
 		{
-			string result = " ".JoinNonEmpty(
-				SyntaxOfAttributes(type, typeLinks),
-				"public",
-				type.IsInterface ? "" :
-				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),
-				type.IsClass ? "class" : type.IsEnum ? "enum" : type.IsInterface ? "interface" : "struct",
-				NameForSyntax(type));
+			if (type.IsValueType)
+			{
+				return null;
+			}
 
 			TypeElement baseType = type.BaseType;
 			if (baseType != null && baseType.BaseType == null)
 			{
 				// every class derives from System.Object, that's not interesting
-				baseType = null;
+				return null;
 			}
 
-			var interfaces = type.GetInterfaces();
+			return baseType;
+		}
 
+		public override string Syntax(TypeElement type, bool typeLinks = true)
+		{
+			string result = " ".JoinNonEmpty(
+				SyntaxOfAttributes(type, typeLinks),
+				"public",
+				type.IsInterface || type.IsValueType ? "" :
+				(type.IsStatic ? "static" : (type.IsSealed ? "sealed" : type.IsAbstract ? "abstract" : "")),
+				type.IsClass ? "class" : type.IsEnum ? "enum" : type.IsInterface ? "interface" : "struct",
+				NameForSyntax(type));
+
+			TypeElement baseType = BaseTypeForSyntax(type);
+			var interfaces = type.GetInterfaces();
 			var baseTypes = new[] { baseType }.Concat(interfaces).Where(t => t != null).ToArray();
 			if (baseTypes.Any())
 			{

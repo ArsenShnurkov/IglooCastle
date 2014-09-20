@@ -36,5 +36,14 @@ namespace IglooCastle.Tests
 				expected,
 				Documentation.Find(typeof(AnnotatedDemo)).GetProperty("Name").ToString("x"));
 		}
+
+		[Test]
+		public void TestSyntaxNullableProperty()
+		{
+			const string expected = "public <a href=\"http://msdn.microsoft.com/en-us/library/system.double%28v=vs.110%29.aspx\">double</a>? Price { get; set; }";
+			Assert.AreEqual(
+				expected,
+				Documentation.Find(typeof(DemoStruct)).GetProperty("Price").ToSyntax());
+		}
 	}
 }

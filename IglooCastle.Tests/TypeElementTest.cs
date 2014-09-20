@@ -238,5 +238,12 @@ namespace IglooCastle.Tests
 			},
 				result);
 		}
+
+		[Test]
+		public void TestSyntaxOfStruct()
+		{
+			var typeElement = Documentation.Find(typeof(DemoStruct));
+			Assert.AreEqual("public struct DemoStruct", typeElement.ToSyntax());
+		}
 	}
 }

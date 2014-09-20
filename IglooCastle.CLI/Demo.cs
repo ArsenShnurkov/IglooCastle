@@ -49,7 +49,6 @@ namespace IglooCastle.Demo
 		where T2 : T1, new()
 		where T3 : struct
 	{
-
 	}
 
 	[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
@@ -87,5 +86,10 @@ namespace IglooCastle.Demo
 		[Demo("name", Size = 42)]
 		public void Test()
 		{ }
+	}
+
+	public struct DemoStruct
+	{
+		public double? Price { get; set; }
 	}
 }

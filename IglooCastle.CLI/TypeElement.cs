@@ -63,6 +63,15 @@ namespace IglooCastle.CLI
 		}
 
 		/// <summary>
+		/// Gets a value indicating whether this type is a value type.
+		/// </summary>
+		/// <seealso cref="System.Type.IsValueType"/>
+		public bool IsValueType
+		{
+			get { return Member.IsValueType; }
+		}
+
+		/// <summary>
 		/// Gets a value indicating whether this instance is interface.
 		/// </summary>
 		/// <value><c>true</c> if this instance is interface; otherwise, <c>false</c>.</value>
@@ -117,6 +126,15 @@ namespace IglooCastle.CLI
 		}
 
 		#endregion
+
+		public bool IsNullable
+		{
+			get
+			{
+				return Member.IsGenericType
+					&& Member.GetGenericTypeDefinition() == typeof(Nullable<>);
+			}
+		}
 
 		public TypeElement BaseType
 		{
@@ -177,6 +195,16 @@ namespace IglooCastle.CLI
 		public bool IsAssignableFrom(TypeElement t)
 		{
 			return Member.IsAssignableFrom(t.Member);
+		}
+
+		public TypeElement GetNullableType()
+		{
+			if (!IsNullable)
+			{
+				throw new InvalidOperationException("Type is not nullable");
+			}
+
+			return Documentation.Find(Member.GetGenericArguments()[0]);
 		}
 
 		public ICollection<EnumMemberElement> EnumMembers
