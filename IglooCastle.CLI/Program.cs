@@ -16,24 +16,44 @@ namespace IglooCastle.CLI
 		/// </summary>
 		private readonly List<string> _possibleAssemblyPaths = new List<string>();
 
-		static void Main(string[] args)
-		{
-			Program p = new Program();
-			p.AddAssemblyResolver();
-			Documentation documentation = new Documentation();
+		private readonly Options _options;
 
-#if DEBUG
-			if (args.Length == 0)
+		public Program(Options options)
+		{
+			_options = options;
+
+			#if DEBUG
+			if (_options.InputAssemblies.Length == 0)
 			{
-				args = new string[]
+				_options.InputAssemblies = new string[]
 					{
 						Assembly.GetExecutingAssembly().Location
 					};
 			}
-#endif
+			#endif
 
-			documentation = args.Aggregate(documentation, (current, arg) => current.Merge(p.ProcessAssembly(arg)));
-			p.RunGenerator(documentation);
+			_options.OutputDirectory = _options.OutputDirectory ?? Path.GetFullPath(Environment.CurrentDirectory);
+		}
+
+		static void Main(string[] args)
+		{
+			Program p = new Program(Options.Parse(args));
+			p.Run();
+		}
+
+		private void Run()
+		{
+			// hook in assembly resolver event handler
+			AddAssemblyResolver();
+
+			// aggregate documentation
+			Documentation documentation = new Documentation();
+			documentation = _options.InputAssemblies.Aggregate(
+				documentation,
+				(current, arg) => current.Merge(ProcessAssembly(arg)));
+
+			// run python generator
+			RunGenerator(documentation);
 			Console.WriteLine("All done");
 		}
 
@@ -54,15 +74,25 @@ namespace IglooCastle.CLI
 
 		private void RunGenerator(Documentation documentation)
 		{
-			var engine = Python.CreateEngine();
+			string outputDirectory = Path.GetFullPath(_options.OutputDirectory);
+
+			// path of IglooCastle.exe
+			// this is also the path where the CSS/JS are supposed to be and also the generator.py
 			string assemblyPath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+
+			// prepare python engine
+			var engine = Python.CreateEngine();
 			var searchPaths = engine.GetSearchPaths();
 			searchPaths.Add(assemblyPath);
 			engine.SetSearchPaths(searchPaths);
-			dynamic generator = engine.Runtime.UseFile("generator.py");
-			generator.Generate(documentation);
 
-			string outputDirectory = Path.GetFullPath(Environment.CurrentDirectory);
+			// load generator.py
+			dynamic generator = engine.Runtime.UseFile("generator.py");
+
+			// run dynamic generator
+			generator.Generate(documentation, outputDirectory);
+
+			// copy CSS/JS to output folder
 			if (assemblyPath != outputDirectory)
 			{
 				Console.WriteLine("Copying static files");
@@ -116,4 +146,5 @@ namespace IglooCastle.CLI
 			}
 		}
 	}
+
 }

@@ -2,6 +2,7 @@
 import clr
 import System
 from time import gmtime, strftime
+from System.IO import Path
 
 clr.AddReference("IglooCastle.CLI")
 import IglooCastle.CLI
@@ -47,9 +48,9 @@ class HtmlTemplate:
 		self.main   = ""
 		self.footer = ""
 
-	def write(self, file):
-		print "Writing file %s" % file
-		f = open(file, 'w')
+	def write(self, output_directory, filename):
+		print "Writing file %s" % filename
+		f = open(Path.Combine(output_directory, filename), 'w')
 		f.write(self.__render())
 		f.close()
 
@@ -941,7 +942,7 @@ class MethodNode(NodeBase):
 		return ""
 
 
-def make_visitor(nav, footer):
+def make_visitor(nav, footer, output_directory):
 	"""Makes the visitor function that processes each navigation node."""
 
 	def visitor(navigation_node):
@@ -952,7 +953,7 @@ def make_visitor(nav, footer):
 
 		html_template.nav    = nav
 		html_template.footer = footer
-		html_template.write(navigation_node.href())
+		html_template.write(output_directory, navigation_node.href())
 
 	return visitor
 
@@ -963,7 +964,7 @@ def make_visitor(nav, footer):
 #				taskName = type.GetAttribute('NAnt.Core.Attributes.TaskName').Name
 #				print "todo: generate page for nant task " + taskName
 
-def Generate(documentation):
+def Generate(documentation, output_directory):
 	"""Entry point for IglooCastle"""
 	print "Hello from python!"
 
@@ -975,6 +976,6 @@ def Generate(documentation):
 			<script src="jquery-1.11.1.min.js"></script>
 			<script src="app.js"></script>
 			</footer>"""
-	visitor = make_visitor(nav, footer)
+	visitor = make_visitor(nav, footer, output_directory)
 	root_nav_node.visit(visitor)
 	print "Python out!"

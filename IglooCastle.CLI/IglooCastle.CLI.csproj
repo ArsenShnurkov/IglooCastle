@@ -109,6 +109,7 @@
     <Compile Include="NamespacePrinter.cs" />
     <Compile Include="Demo.cs" />
     <Compile Include="CustomAttributeDataElement.cs" />
+    <Compile Include="Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -56,6 +56,7 @@
     <Compile Include="XmlCommentTest.cs" />
     <Compile Include="Sample.cs" />
     <Compile Include="DocumentationTest.cs" />
+    <Compile Include="OptionsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
